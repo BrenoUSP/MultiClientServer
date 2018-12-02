@@ -1,5 +1,3 @@
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -8,24 +6,15 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.StyledEditorKit;
-import javax.swing.JTextPane;
-import javax.swing.JTextArea;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.border.TitledBorder;
@@ -34,8 +23,6 @@ import java.awt.Color;
 import javax.swing.JList;
 import javax.swing.AbstractListModel;
 import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -344,7 +331,49 @@ public class ChatServer extends JFrame {
         users.remove(name);
         String[] tempList = new String[(users.size())];
         users.toArray(tempList);
+        
+        try 
+    	{
+    		File file1 = new File("M:/users.txt");
 
+    		FileWriter fw1 = new FileWriter(file1, true);
+    		BufferedWriter bw1 = new BufferedWriter(fw1);
+    		PrintWriter out1 = new PrintWriter(bw1);
+
+    		BufferedReader in1 = new BufferedReader(new FileReader(file1));
+			String line1 = in1.readLine();
+			System.out.println(line1);
+			
+			for (PrintWriter client : clientOutputStreams) {
+    	
+    			String[] lineComp = line1.split(" ");
+
+    			/*
+    			 * SE O CLIENTE É IGUAL
+    			 */
+
+    			if(data.equals(lineComp[0])) {
+    				PrintWriter writer = client;
+    				clientOutputStreams.remove(writer);
+    			}
+
+    			//if(!message.contains("Server")) {
+    			//	addText(data[0] + ":" + data[1] + "\n");
+    			//}
+    			
+    			line1 = in1.readLine();
+    		}
+			
+			out1.close();
+			in1.close();
+			
+    	} 
+
+    	catch (Exception ex) 
+    	{
+    		addText("Error finding client to remove. \n");
+    	}
+        
         for (String token:tempList) 
         {
             message = (token + add);

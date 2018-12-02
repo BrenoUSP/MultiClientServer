@@ -1,27 +1,13 @@
-import java.awt.BorderLayout;
 import java.awt.EventQueue;
-import java.awt.Font;
 import java.util.List;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.AbstractListModel;
-import javax.swing.JSpinner;
 import javax.swing.JTextPane;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
-import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.StyledEditorKit;
-
 import org.apache.commons.io.FileUtils;
 import javax.swing.UIManager;
 import java.awt.Color;
@@ -29,7 +15,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -42,8 +27,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -160,7 +143,7 @@ public class ChatClient extends JFrame {
 	public ChatClient() {
 		setTitle("Chat");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 600, 420);
+		setBounds(100, 100, 640, 420);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -216,7 +199,7 @@ public class ChatClient extends JFrame {
 
 		JPanel panel_1 = new JPanel();
 		panel_1.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Comandos", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		panel_1.setBounds(4, 239, 250, 138);
+		panel_1.setBounds(4, 239, 250, 141);
 		contentPane.add(panel_1);
 		panel_1.setLayout(null);
 
@@ -225,7 +208,7 @@ public class ChatClient extends JFrame {
 		panel_1.add(txtpnCommandsListList);
 		txtpnCommandsListList.setEditable(false);
 		txtpnCommandsListList.setText("  list              List the names of all rooms.\r\n  nickname <name>   Gives a name for the user.\r\n  join <room name>  Joins a room.\r\n  \\                 Leaves a room (only command\r\n                    possible inside a room).");
-		btnSend.setBounds(498, 255, 76, 115);
+		btnSend.setBounds(526, 255, 95, 115);
 		contentPane.add(btnSend);
 
 
@@ -402,11 +385,11 @@ public class ChatClient extends JFrame {
 
 		});
 
-		textArea.setBounds(258, 255, 230, 115);
+		textArea.setBounds(258, 255, 258, 115);
 		contentPane.add(textArea);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 11, 564, 217);
+		scrollPane.setBounds(10, 11, 614, 219);
 		contentPane.add(scrollPane);
 		
 		textPane = new JEditorPane();
