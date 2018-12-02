@@ -48,10 +48,12 @@ public class ChatClient extends JFrame {
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private Socket connection;
-	private String serverIP = "127.0.0.1";
+	private String serverIP = "localhost";
+	private int port = 2222;
 	JEditorPane textPane;
 	boolean inRoom = false;
     Thread starter;
+    String strState, txt;
     
 	/**
 	 * Launch the application.
@@ -67,38 +69,11 @@ public class ChatClient extends JFrame {
 			}
 		});
 	}
-
     
     public void ListenThread() 
     {
          Thread IncomingReader = new Thread(new IncomingReader());
          IncomingReader.start();
-    }
-    
-    //--------------------------//
-    
-    public void userAdd(String data) 
-    {
-         users.add(data);
-    }
-    
-    //--------------------------//
-    
-    public void userRemove(String data) 
-    {
-         addText(data + " is now offline.\n");
-    }
-    
-    //--------------------------//
-    
-    public void writeUsers() 
-    {
-         String[] tempList = new String[(users.size())];
-         users.toArray(tempList);
-         for (String token:tempList) 
-         {
-             //users.append(token + "\n");
-         }
     }
 	
     public class IncomingReader implements Runnable
@@ -119,19 +94,6 @@ public class ChatClient extends JFrame {
                      {
                         addText(data[0] + ": " + data[1] + "\n");
                      } 
-                     else if (data[2].equals(connect))
-                     {
-                        userAdd(data[0]);
-                     } 
-                     else if (data[2].equals(disconnect)) 
-                     {
-                        userRemove(data[0]);
-                     } 
-                     else if (data[2].equals(done)) 
-                     {
-                        writeUsers();
-                        users.clear();
-                     }
                 }
            }catch(Exception ex) { }
         }
@@ -150,10 +112,27 @@ public class ChatClient extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 
+		usrName = "username" + Math.abs(new Random().nextInt());
+		
 		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				try {
+
+					if (inRoom) {
+
+						sock.close();
+
+						String strState = "Disconnect";
+						inRoom = false;
+
+
+						writer.println(usrName + ":" + " :" + strState);
+						writer.flush(); // flushes the buffer
+
+						textArea.setText("");
+					}
+					
 					File file = new File("M:/users.txt");
 
 					List<String> lines = FileUtils.readLines(file);
@@ -174,29 +153,6 @@ public class ChatClient extends JFrame {
 			}
 		});
 
-		try {
-
-			// Cria arquivos com os usuários
-
-			File file = new File("M:/users.txt");
-			boolean roomExists = false;
-
-			FileWriter fw = new FileWriter(file, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			PrintWriter out = new PrintWriter(bw);
-
-			usrName = "username" + Math.abs(new Random().nextInt());
-
-			out.println(usrName);
-
-			BufferedReader in = new BufferedReader(new FileReader(file));
-
-			out.close();
-
-		} catch (IOException el) {
-
-		}
-
 		JPanel panel_1 = new JPanel();
 		panel_1.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Comandos", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		panel_1.setBounds(4, 239, 250, 141);
@@ -216,7 +172,7 @@ public class ChatClient extends JFrame {
 		textArea.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				String txt = textArea.getText();
+				txt = textArea.getText();
 
 				if(e.getKeyCode() != KeyEvent.VK_BACK_SPACE){
 					e.consume();
@@ -225,85 +181,25 @@ public class ChatClient extends JFrame {
 				if(!txt.isEmpty()){
 					if(e.getKeyCode() == KeyEvent.VK_ENTER){
 						
-						boolean userRoom = false;
-						String strState = "Chat";
+						strState = "Chat";
 						
-						if(!userRoom) {
+						/*
+						 * TRABALHAR POSSIVELMENTE COM SALAS EM TEXTO
+						 */
+						
+						if(!inRoom) {
 							if(txt.startsWith("join <")) {
+								String usrText = txt.substring(6, txt.lastIndexOf('>'));
+									
+								textPane.setText(textPane.getText() + "Você entrou na sala: " + usrText + "\n");
+
+						        strState = "Connect";
 								
-								try {
-									File file = new File("M:/servers.txt");
-									boolean roomExists = false;
-
-									FileWriter fw = new FileWriter(file, true);
-									BufferedWriter bw = new BufferedWriter(fw);
-									PrintWriter out = new PrintWriter(bw);
-
-									String usrText = txt.substring(6, txt.lastIndexOf('>'));
-
-									BufferedReader in = new BufferedReader(new FileReader(file));
-									String line;
-									ArrayList<String> servers = new ArrayList<>();
-
-									while((line = in.readLine()) != null)
-									{
-										if(line.equals(usrText)) {
-											roomExists = true;
-										}
-
-										servers.add(line);
-									}
-									
-									textPane.setText(textPane.getText() + "Você entrou na sala: " + usrText + "\n");
-									
-							        inRoom = true;
-									
-									if(!roomExists) {
-										out.println(usrText);
-										servers.add(usrText);
-									} 
-									
-									in.close();
-									out.close();
-									
-									/*
-									 * ALOCAR USUÁRIO A UM SERVIDOR
-									 */
-									
-									File file1 = new File("M:/users.txt");
-
-									FileWriter fw1 = new FileWriter(file1, true);
-									BufferedWriter bw1 = new BufferedWriter(fw1);
-									PrintWriter out1 = new PrintWriter(bw1);
-
-									BufferedReader in1 = new BufferedReader(new FileReader(file1));
-									String line1;
-									int lineCounter1 = 0;
-
-									while((line1 = in1.readLine()) != null)
-									{
-										lineCounter1++;
-										if(usrName.equals(line1)) {
-											break;
-										}
-									}
-
-									List<String> lines = Files.readAllLines(file1.toPath(), StandardCharsets.UTF_8);
-									lines.set(lineCounter1 - 1, usrName + " " + usrText);
-									Files.write(file1.toPath(), lines, StandardCharsets.UTF_8);
-
-									out1.close();
-									in1.close();
-
-								} catch (IOException e1) {
-									// TODO Auto-generated catch block
-									e1.printStackTrace();
-								}
-
 						        Thread starter = new Thread(new ServerConnect());
 						        starter.start();
 
-							} else if (txt.startsWith("list") && !inRoom) {
+						        inRoom = true;
+							} /*else if (txt.startsWith("list")) {
 								try {
 									File file = new File("M:/servers.txt");
 
@@ -321,63 +217,39 @@ public class ChatClient extends JFrame {
 										textPane.setText(textPane.getText() + line + "\n");
 									}
 
-								} catch (IOException et) {
-
-								}
-							} else if (txt.startsWith("nickname <") && !inRoom){
-								try {
-									File file = new File("M:/users.txt");
-
-									FileWriter fw = new FileWriter(file, true);
-									BufferedWriter bw = new BufferedWriter(fw);
-									PrintWriter out = new PrintWriter(bw);
-
-									BufferedReader in = new BufferedReader(new FileReader(file));
-									String line;
-									int lineCounter = 0;
-
-									while((line = in.readLine()) != null)
-									{
-										lineCounter++;
-										if(usrName.equals(line)) {
-											break;
-										}
-									}
-
-									String data =  txt.substring(10, txt.lastIndexOf('>'));
-
-									List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-									lines.set(lineCounter - 1, data);
-									Files.write(file.toPath(), lines, StandardCharsets.UTF_8);
-
-									usrName = data;
-
+									in.close();
 									out.close();
-
+									fw.close();
+									bw.close();
+									
 								} catch (IOException et) {
 
 								}
-							} else if (txt.startsWith("\\") && inRoom) {
-								// SAIR DO SERVIDOR E SALA
-								try {
-									sock.close();
-								} catch (IOException e1) {
-									// TODO Auto-generated catch block
-									e1.printStackTrace();
-								}
-								
-								strState = "Disconnect";
-								inRoom = false;
+							}*/ else if (txt.startsWith("nickname <") && txt.endsWith(">")){
+								String data =  txt.substring(10, txt.lastIndexOf('>'));
+								usrName = data;
+							} 
+						} else if (txt.startsWith("\\") && inRoom) {
+							// SAIR DO SERVIDOR E SALA
+							try {
+								sock.close();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
 							}
+							
+							strState = "Disconnect";
+							inRoom = false;		
 						}
 
+						if(strState != "Connect") {
 			            try {
 			                writer.println(usrName + ":" + txt + ":" + strState);
 			                writer.flush(); // flushes the buffer
 			             } catch (Exception ex) {
-			                addText("Entre em uma sala! \n");
+			                //addText("Entre em uma sala! \n");
 			             }
-
+						}
 						textArea.setText("");
 					}
 				}
@@ -399,7 +271,7 @@ public class ChatClient extends JFrame {
         textPane.setEditorKit(new StyledEditorKit());
         textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         setResizable(false);
-        
+        /*
 		try {
 
 			File file = new File("M:/servers.txt");
@@ -422,12 +294,13 @@ public class ChatClient extends JFrame {
 
 
 			in.close();
-
 			out.close();
+			fw.close();
+			bw.close();
 		} catch (IOException e) {
 
 		}
-		
+		*/
 		setVisible(true);
 	}
 
@@ -438,11 +311,11 @@ public class ChatClient extends JFrame {
         {
             try 
             {
-                sock = new Socket(InetAddress.getByName(serverIP), 6789);
+                sock = new Socket(serverIP, port);
                 InputStreamReader streamreader = new InputStreamReader(sock.getInputStream());
                 reader = new BufferedReader(streamreader);
                 writer = new PrintWriter(sock.getOutputStream());
-                writer.println(usrName + ":has connected.:Connect");
+                writer.println(usrName + ":" + txt + ":Connect");
                 writer.flush(); 
             } 
             catch (Exception ex) 

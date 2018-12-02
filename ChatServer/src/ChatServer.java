@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -31,12 +33,16 @@ public class ChatServer extends JFrame {
     BufferedReader reader;
     Socket sock;
     PrintWriter client;
-    ArrayList<PrintWriter> clientOutputStreams;
-    ArrayList<String> users;
+    
+    ArrayList<String> rooms;
+    String[] users;
+    HashMap<PrintWriter, String[]> map;
+    
     private JEditorPane textPane;
     private JScrollPane scrollPane;
     private JPanel panel;
     private JList list;
+    private int port = 2222;
     
     public class ClientHandler implements Runnable	
     {
@@ -59,25 +65,25 @@ public class ChatServer extends JFrame {
         @Override
         public void run() 
         {
-             String message, connect = "Connect", disconnect = "Disconnect", chat = "Chat" ;
+             String message = "", connect = "Connect", disconnect = "Disconnect", chat = "Chat" ;
              String[] data;
 
              try 
              {
                  while ((message = reader.readLine()) != null) 
                  {
-                	 //addText("Received: " + message + "\n");
+		            
                      data = message.split(":");
 
                      if (data[2].equals(connect)) 
                      {
+                         userAdd(message);
                          tellEveryone((data[0] + ":" + data[1] + ":" + chat));
-                         userAdd(data[0]);
                      } 
                      else if (data[2].equals(disconnect)) 
                      {
-                         tellEveryone((data[0] + ":has disconnected." + ":" + chat));
                          userRemove(data[0]);
+                         tellEveryone((data[0] + ":has disconnected." + ":" + chat));
                      } 
                      else if (data[2].equals(chat)) 
                      {
@@ -93,7 +99,7 @@ public class ChatServer extends JFrame {
               {
             	 addText("Lost a connection. \n");
                  ex.printStackTrace();
-                 clientOutputStreams.remove(client);
+                 map.remove(client);
               } 
  	} 
      }
@@ -103,28 +109,30 @@ public class ChatServer extends JFrame {
         @Override
         public void run() 
         {
-            clientOutputStreams = new ArrayList();
-            users = new ArrayList();  
 
-            try 
-            {
-                ServerSocket serverSock = new ServerSocket(6789, 100);
+        	map = new HashMap<>();
+        	rooms = new ArrayList<>();
+        	
+        	try 
+        	{
+        		ServerSocket serverSock = new ServerSocket(port, 100);
 
-                while (true) 
-                {
-				Socket clientSock = serverSock.accept();
-				PrintWriter writer = new PrintWriter(clientSock.getOutputStream());
-				clientOutputStreams.add(writer);
+        		while (true) 
+        		{
+        			Socket clientSock = serverSock.accept();
+        			PrintWriter writer = new PrintWriter(clientSock.getOutputStream());
 
-				Thread listener = new Thread(new ClientHandler(clientSock, writer));
-				listener.start();
-				addText("Got a connection. \n");
-                }
-            }
-            catch (Exception ex)
-            {
-                addText("Error making a connection. \n");
-            }
+        			map.put(writer, new String[2]);
+        			
+        			Thread listener = new Thread(new ClientHandler(clientSock, writer));
+        			listener.start();
+        			addText("Got a connection. \n");
+        		}
+        	}
+        	catch (Exception ex)
+        	{
+        		addText("Error making a connection. \n");
+        	}
         }
     }
     
@@ -140,88 +148,34 @@ public class ChatServer extends JFrame {
         });
     }
     
-    public String findServer(String message) {
+    public String findRoom(String message) {
     	String[] data = message.split(":");
 
     	String usrName = data[0];
 
-    	try {
-
-    		File file = new File("M:/users.txt");
-
-    		String exp = "";
-    		
-    		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
-    		    for(String line; (line = br.readLine()) != null; ) {
-    		        if (line.contains(usrName)) {
-    		        	exp = line;
-    		        	break;
-    		        }
-    		    }
-    		}
-    				
-    		String[] lineComp;	
-    		
-    		//if (!exp.contains(" ")) {
-    		//	return "";
-    		//} else {
-        	lineComp = exp.split(" ");
-
-
-    		return lineComp[1];
-    	} catch (IOException e) {
-        	return "";
-    	}
+		for (PrintWriter client : map.keySet()) {
+			if(map.get(client)[0].equals(usrName)) {
+				return map.get(client)[1];
+			}
+		}
     	
+		return "";
     }
 
     public void systemCall(String message) {
-    	Iterator it = clientOutputStreams.iterator();
     	String[] data = message.split(":");
 
-    	while (it.hasNext()) 
-    	{
+		for (PrintWriter client : map.keySet()) {
     		try 
     		{
-    			PrintWriter writer = (PrintWriter) it.next();
+    			client.println(message);
+    			client.flush();
 
-    			if(!message.contains("join <")) {
-    				writer.println(message);
-    			} else {
-    				File file = new File("M:/servers.txt");
-
-    				FileWriter fw = new FileWriter(file, true);
-    				BufferedWriter bw = new BufferedWriter(fw);
-    				PrintWriter out = new PrintWriter(bw);
-
-    				BufferedReader in = new BufferedReader(new FileReader(file));
-    				String line;
-    				ArrayList<String> servers = new ArrayList<>();
-
-    				while((line = in.readLine()) != null)
-    				{
-    					servers.add(line);
-    				}
-
-    				list.setModel(new AbstractListModel() {
-    					//String[] values = (String[]) servers.toArray();
-    					public int getSize() {
-    						return servers.size();
-    					}
-    					public Object getElementAt(int index) {
-    						return servers.get(index);
-    					}
-    				});
-
-    				in.close();
-
-    				out.close();
-    			}
 
     			if(!message.contains("Server")) {
     				addText(data[0] + ":" + data[1] + "\n");
     			}
-    			writer.flush();
+
     		}
 
 
@@ -233,153 +187,80 @@ public class ChatServer extends JFrame {
     	} 
     }
     
-    /*
-     * ARRUMAR A ORDEM QUE É MANDADA AS MENSAGENS PARA FUNCIONAR
-     */
-    
-    public void serverCall(String server, String message) {
-    	//Iterator it = clientOutputStreams.iterator();
-    	String line1 = "";
+    public void roomCall(String room, String message) {
+			for (PrintWriter client : map.keySet()) {
 
-		//System.out.println(message + server);
-
-    	try 
-    	{
-    		File file1 = new File("M:/users.txt");
-
-    		FileWriter fw1 = new FileWriter(file1, true);
-    		BufferedWriter bw1 = new BufferedWriter(fw1);
-    		PrintWriter out1 = new PrintWriter(bw1);
-
-    		BufferedReader in1 = new BufferedReader(new FileReader(file1));
-			line1 = in1.readLine();
-			System.out.println(line1);
-			
-			for (PrintWriter client : clientOutputStreams) {
-    	
-    			String[] lineComp = line1.split(" ");
-
-    			/*
-    			 * SE O SERVIDOR É IGUAL
-    			 */
-
-    			if(server.equals(lineComp[1])) {
+    			if(map.get(client)[1].equals(room)) {
     				PrintWriter writer = client;
     				writer.println(message);
     				writer.flush();
     			}
 
-
-    			//if(!message.contains("Server")) {
-    			//	addText(data[0] + ":" + data[1] + "\n");
-    			//}
-    			
-    			line1 = in1.readLine();
-    		}
-			
-			out1.close();
-			in1.close();
-			
-    	} 
-
-    	catch (Exception ex) 
-    	{
-    		addText("Error telling Server. \n");
-    	}
+			}
     }
 
     public void tellEveryone(String message) 
     {
     	String[] data = message.split(":");
-		String server = "";
 		
-    	if(data[2].equals("Chat")) {
-        	server = findServer(message);
-        	
-        	serverCall(server, message);
+		if(data[2].equals("Chat")) {
+        	String room = findRoom(message);
+        	roomCall(room, message);
         	
     	} else {
     		systemCall(message);
     	}
-    	
-
-    	int counter = 0;
-
-    	
+    	  	
     }
 
-    public void userAdd (String data) 
+    public void userAdd (String message) 
     {
-        String message, add = ": :Connect", done = "Server: :Done", name = data;
-        //addText("Before " + name + " added. \n");
-        users.add(name);
-        //addText("After " + name + " added. \n");
-        String[] tempList = new String[(users.size())];
-        users.toArray(tempList);
+    	String[] data = message.split(":");
 
-        for (String token:tempList) 
-        {
-            message = (token + add);
-            tellEveryone(message);
-        }
-        tellEveryone(done);
+    	System.out.println(data[1]);
+    	String usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
+
+    	boolean roomExists = false;
+
+    	for(String room : rooms) {
+    		if (room.equals(usrRoom)) {
+    			roomExists = true;
+    			break;
+    		}
+    	}
+
+    	map.get(client)[1] = usrRoom;
+
+    	if(!roomExists) {
+    		rooms.add(usrRoom);
+    	}
+
+    	list.setModel(new AbstractListModel() {
+    		//String[] values = (String[]) servers.toArray();
+    		public int getSize() {
+    			return rooms.size();
+    		}
+    		public Object getElementAt(int index) {
+    			return rooms.get(index);
+    		}
+    	});
+
+    	map.get(client)[0] = data[0];
     }
     
     public void userRemove (String data) 
     {
-        String message, add = ": :Connect", done = "Server: :Done", name = data;
-        users.remove(name);
-        String[] tempList = new String[(users.size())];
-        users.toArray(tempList);
-        
-        try 
-    	{
-    		File file1 = new File("M:/users.txt");
-
-    		FileWriter fw1 = new FileWriter(file1, true);
-    		BufferedWriter bw1 = new BufferedWriter(fw1);
-    		PrintWriter out1 = new PrintWriter(bw1);
-
-    		BufferedReader in1 = new BufferedReader(new FileReader(file1));
-			String line1 = in1.readLine();
-			System.out.println(line1);
-			
-			for (PrintWriter client : clientOutputStreams) {
+    	String[] userTemp;
     	
-    			String[] lineComp = line1.split(" ");
-
-    			/*
-    			 * SE O CLIENTE É IGUAL
-    			 */
-
-    			if(data.equals(lineComp[0])) {
-    				PrintWriter writer = client;
-    				clientOutputStreams.remove(writer);
-    			}
-
-    			//if(!message.contains("Server")) {
-    			//	addText(data[0] + ":" + data[1] + "\n");
-    			//}
-    			
-    			line1 = in1.readLine();
-    		}
-			
-			out1.close();
-			in1.close();
-			
-    	} 
-
-    	catch (Exception ex) 
-    	{
-    		addText("Error finding client to remove. \n");
-    	}
-        
-        for (String token:tempList) 
-        {
-            message = (token + add);
-            tellEveryone(message);
+        for(PrintWriter client : map.keySet()) {
+        	userTemp = map.get(client);
+        	
+        	if(userTemp[0].equals(data)) {
+        		map.remove(client);
+        		break;
+        	}
         }
-        tellEveryone(done);
+
     }
     
 	
@@ -435,42 +316,6 @@ public class ChatServer extends JFrame {
         JButton btnNewButton_1 = new JButton("Parar");
         btnNewButton_1.setBounds(374, 219, 89, 23);
         contentPane.add(btnNewButton_1);
-		try {
-
-			File file = new File("M:/servers.txt");
-
-			//Create the file
-			//if (file.createNewFile()){
-			FileWriter fw = new FileWriter(file, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			PrintWriter out = new PrintWriter(bw);
-
-
-			BufferedReader in = new BufferedReader(new FileReader(file));
-			String line;
-			ArrayList<String> servers = new ArrayList<>();
-
-			while((line = in.readLine()) != null)
-			{
-				servers.add(line);
-			}
-
-			list.setModel(new AbstractListModel() {
-				//String[] values = (String[]) servers.toArray();
-				public int getSize() {
-					return servers.size();
-				}
-				public Object getElementAt(int index) {
-					return servers.get(index);
-				}
-			});
-
-			in.close();
-
-			out.close();
-		} catch (IOException e) {
-
-		}
 
 	}
 	
