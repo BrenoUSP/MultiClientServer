@@ -31,7 +31,7 @@ import java.awt.event.MouseEvent;
 public class ChatServer extends JFrame {
 	private JPanel contentPane;
     PrintWriter client;
-    ArrayList<String> rooms;
+    ArrayList<String> rooms = new ArrayList<>();
 
     HashMap<PrintWriter, String[]> map;
     
@@ -229,12 +229,36 @@ public class ChatServer extends JFrame {
     	String usrRoom = "";
 
     	if(data[2].equals("Chat")) {
-    	  	if(data[1].startsWith("join <")) {
+    	  	if(data[1].startsWith("join <") && data[1].endsWith(">")) {
         		for(PrintWriter user : map.keySet()) {
         			if(map.get(user)[0].equals(data[0])){ 
         				usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
         				map.get(user)[1] = usrRoom;
-        				user.println(data[0] + ":You entered the room - " + usrRoom + ":Chat");
+        				
+        				boolean roomExists = false;
+
+        		    	for(String room : rooms) {
+        		    		if (room.equals(usrRoom)) {
+        		    			roomExists = true;
+        		    			break;
+        		    		}
+        		    	}
+
+        		    	if(!roomExists) {
+        		    		rooms.add(usrRoom);
+        		    	}
+
+        		    	list.setModel(new AbstractListModel() {
+        		    		//String[] values = (String[]) servers.toArray();
+        		    		public int getSize() {
+        		    			return rooms.size();
+        		    		}
+        		    		public Object getElementAt(int index) {
+        		    			return rooms.get(index);
+        		    		}
+        		    	});
+        				
+        				user.println(":You entered the room - " + usrRoom + ":Chat");
         				user.flush();
         				send = false;
         				break;
@@ -243,11 +267,39 @@ public class ChatServer extends JFrame {
         	} else {
         		for(PrintWriter user : map.keySet()) {
         			if(map.get(user)[0].equals(data[0])){ 
-            			if(map.get(user)[1].equals("")){ 
+            			if(map.get(user)[1].equals("")){ // USUARIO NÃO TEM SALA. COMANDOS PARA LER NICKNAME e LIST
             				send = false;
+            				
+            				if(data[1].startsWith("list")) {
+
+                				if(!rooms.isEmpty()) {
+                					user.println(data[0] + ":Available rooms - :Chat");
+                    				user.flush();
+
+                    				for(String room: rooms) {
+                    					user.println(":"+ room +":Chat");
+                    					user.flush();
+                    				}
+                				} else {
+                					user.println(data[0] + ":No rooms available:Chat");
+                    				user.flush();
+                				}
+
+            				} else {
+            					
+            				}
+            				
             				break;
             			} else {
-            				usrRoom = map.get(user)[1];
+            				usrRoom = map.get(user)[1]; // USUARIO JA ESTA EM UMA SALA. COMANDOS PARA LER: \
+            				
+            				if(data[1].startsWith("\\")) {
+            					map.get(user)[1] = "";
+            					user.println(":You left the room:Chat");
+                				user.flush();
+            					break;
+            				}
+
             			}
         			}
         		}

@@ -100,7 +100,9 @@ public class ChatClient extends JFrame {
                      {
                         addText(data[0] + ": " + data[1] + "\n");
                         //ta_chat.setCaretPosition(ta_chat.getDocument().getLength());
-                     } 
+                     } else if (data[2].equals(connect)) {
+                    	 //addText(data[0] + " enters the room."+ "\n");
+                     }
                 }
            }catch(Exception ex) { }
         }
@@ -230,43 +232,12 @@ public class ChatClient extends JFrame {
         contentPane.add(btnNewButton);
         textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         setResizable(false);
-        /*
-		try {
 
-			File file = new File("M:/servers.txt");
-
-			//Create the file
-			//if (file.createNewFile()){
-			FileWriter fw = new FileWriter(file, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			PrintWriter out = new PrintWriter(bw);
-
-
-			BufferedReader in = new BufferedReader(new FileReader(file));
-			String line;
-			ArrayList<String> servers = new ArrayList<>();
-
-			while((line = in.readLine()) != null)
-			{
-				servers.add(line);
-			}
-
-
-			in.close();
-			out.close();
-			fw.close();
-			bw.close();
-		} catch (IOException e) {
-
-		}
-		*/
 		setVisible(true);
 		
-
 	}
 
 	public void sendText() {
-
 
         try {
             writer.println(usrName + ":" + txt + ":" + "Chat");
