@@ -30,22 +30,22 @@ import java.awt.event.MouseEvent;
 
 public class ChatServer extends JFrame {
 	private JPanel contentPane;
-    BufferedReader reader;
-    Socket sock;
     PrintWriter client;
-    
     ArrayList<String> rooms;
-    String[] users;
+
     HashMap<PrintWriter, String[]> map;
     
     private JEditorPane textPane;
     private JScrollPane scrollPane;
     private JPanel panel;
     private JList list;
-    private int port = 2222;
+    private int port = 6789;
     
     public class ClientHandler implements Runnable	
     {
+        BufferedReader reader;
+        Socket sock;
+
         public ClientHandler(Socket clientSocket, PrintWriter user) 
         {
              client = user;
@@ -57,7 +57,7 @@ public class ChatServer extends JFrame {
              }
              catch (Exception ex) 
              {
-                 addText("Unexpected error... \n");
+                 //ta_chat.append("Unexpected error... \n");
              }
 
         }
@@ -65,43 +65,38 @@ public class ChatServer extends JFrame {
         @Override
         public void run() 
         {
-             String message = "", connect = "Connect", disconnect = "Disconnect", chat = "Chat" ;
+             String message, connect = "Connect", disconnect = "Disconnect", chat = "Chat" ;
              String[] data;
 
              try 
              {
                  while ((message = reader.readLine()) != null) 
                  {
-		            
                      data = message.split(":");
 
                      if (data[2].equals(connect)) 
                      {
-                         userAdd(message);
+                         userAdd(data[0]);
                          tellEveryone((data[0] + ":" + data[1] + ":" + chat));
                      } 
                      else if (data[2].equals(disconnect)) 
                      {
-                         userRemove(data[0]);
                          tellEveryone((data[0] + ":has disconnected." + ":" + chat));
+                         userRemove(data[0]);
                      } 
                      else if (data[2].equals(chat)) 
                      {
                          tellEveryone(message);
                      } 
-                     else 
-                     {
-                    	 addText("No Conditions were met. \n");
-                     }
                  } 
               } 
               catch (Exception ex) 
               {
-            	 addText("Lost a connection. \n");
                  ex.printStackTrace();
                  map.remove(client);
               } 
  	} 
+     
      }
     
     public class ServerStart implements Runnable 
@@ -109,30 +104,27 @@ public class ChatServer extends JFrame {
         @Override
         public void run() 
         {
+            map = new HashMap<>(); 
 
-        	map = new HashMap<>();
-        	rooms = new ArrayList<>();
-        	
-        	try 
-        	{
-        		ServerSocket serverSock = new ServerSocket(port, 100);
+            try 
+            {
+                ServerSocket serverSock = new ServerSocket(port);
 
-        		while (true) 
-        		{
-        			Socket clientSock = serverSock.accept();
-        			PrintWriter writer = new PrintWriter(clientSock.getOutputStream());
+                while (true) 
+                {
+				Socket clientSock = serverSock.accept();
+				PrintWriter writer = new PrintWriter(clientSock.getOutputStream());
+				map.put(writer, new String[] {"", ""});
 
-        			map.put(writer, new String[2]);
-        			
-        			Thread listener = new Thread(new ClientHandler(clientSock, writer));
-        			listener.start();
-        			addText("Got a connection. \n");
-        		}
-        	}
-        	catch (Exception ex)
-        	{
-        		addText("Error making a connection. \n");
-        	}
+				Thread listener = new Thread(new ClientHandler(clientSock, writer));
+				listener.start();
+				addText("Got a connection. \n");
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
     }
     
@@ -147,58 +139,9 @@ public class ChatServer extends JFrame {
             }
         });
     }
+ 
     
-    public String findRoom(String message) {
-    	String[] data = message.split(":");
-
-    	String usrName = data[0];
-
-		for (PrintWriter client : map.keySet()) {
-			if(map.get(client)[0].equals(usrName)) {
-				return map.get(client)[1];
-			}
-		}
-    	
-		return "";
-    }
-
-    public void systemCall(String message) {
-    	String[] data = message.split(":");
-
-		for (PrintWriter client : map.keySet()) {
-    		try 
-    		{
-    			client.println(message);
-    			client.flush();
-
-
-    			if(!message.contains("Server")) {
-    				addText(data[0] + ":" + data[1] + "\n");
-    			}
-
-    		}
-
-
-    		catch (Exception ex) 
-    		{
-    			addText("Error telling System. \n");
-    		}
-
-    	} 
-    }
-    
-    public void roomCall(String room, String message) {
-			for (PrintWriter client : map.keySet()) {
-
-    			if(map.get(client)[1].equals(room)) {
-    				PrintWriter writer = client;
-    				writer.println(message);
-    				writer.flush();
-    			}
-
-			}
-    }
-
+/*
     public void tellEveryone(String message) 
     {
     	String[] data = message.split(":");
@@ -262,6 +205,74 @@ public class ChatServer extends JFrame {
         }
 
     }
+*/
+    
+    public void userAdd (String data) 
+    {
+    	map.get(client)[0] = data;
+    }
+    
+    public void userRemove (String data) 
+    {
+    	for (PrintWriter user : map.keySet()) {
+    		if(map.get(user)[0].equals(data)) {
+    			map.remove(user);
+    			break;
+    		}
+    	}
+    }
+    
+    public void tellEveryone(String message) 
+    {
+    	String [] data = message.split(":");
+    	boolean send = true;
+    	String usrRoom = "";
+
+    	if(data[2].equals("Chat")) {
+    	  	if(data[1].startsWith("join <")) {
+        		for(PrintWriter user : map.keySet()) {
+        			if(map.get(user)[0].equals(data[0])){ 
+        				usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
+        				map.get(user)[1] = usrRoom;
+        				user.println(data[0] + ":You entered the room - " + usrRoom + ":Chat");
+        				user.flush();
+        				send = false;
+        				break;
+        			}
+        		}
+        	} else {
+        		for(PrintWriter user : map.keySet()) {
+        			if(map.get(user)[0].equals(data[0])){ 
+            			if(map.get(user)[1].equals("")){ 
+            				send = false;
+            				break;
+            			} else {
+            				usrRoom = map.get(user)[1];
+            			}
+        			}
+        		}
+        	}
+
+        	if (send) {
+        		for(PrintWriter writer : map.keySet()){
+
+        			if(map.get(writer)[1].equals(usrRoom)) {
+            			writer.println(message);
+            			writer.flush();
+        			}
+
+        		} 
+
+        	} 
+    	} else {
+    		for(PrintWriter writer : map.keySet()){
+        			writer.println(message);
+        			writer.flush();
+    		} 
+    	}
+  
+    }
+
     
 	
 	/**

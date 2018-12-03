@@ -34,6 +34,8 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import javax.swing.JScrollPane;
 import javax.swing.JEditorPane;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class ChatClient extends JFrame {
 	JTextArea textArea;
@@ -49,11 +51,12 @@ public class ChatClient extends JFrame {
 	private ObjectInputStream input;
 	private Socket connection;
 	private String serverIP = "localhost";
-	private int port = 2222;
+	private int port = 6789;
 	JEditorPane textPane;
 	boolean inRoom = false;
     Thread starter;
     String strState, txt;
+    boolean isConnected = false;
     
 	/**
 	 * Launch the application.
@@ -70,11 +73,14 @@ public class ChatClient extends JFrame {
 		});
 	}
     
+	  
     public void ListenThread() 
     {
          Thread IncomingReader = new Thread(new IncomingReader());
          IncomingReader.start();
     }
+    
+ 
 	
     public class IncomingReader implements Runnable
     {
@@ -93,12 +99,12 @@ public class ChatClient extends JFrame {
                      if (data[2].equals(chat)) 
                      {
                         addText(data[0] + ": " + data[1] + "\n");
+                        //ta_chat.setCaretPosition(ta_chat.getDocument().getLength());
                      } 
                 }
            }catch(Exception ex) { }
         }
     }
-	
 	/**
 	 * Create the frame.
 	 */
@@ -149,7 +155,12 @@ public class ChatClient extends JFrame {
 		btnSend.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				txt = textArea.getText();
 
+				if(!txt.isEmpty()){
+					sendText();
+
+				}
 			}
 		});
 
@@ -164,11 +175,12 @@ public class ChatClient extends JFrame {
 		panel_1.add(txtpnCommandsListList);
 		txtpnCommandsListList.setEditable(false);
 		txtpnCommandsListList.setText("  list              List the names of all rooms.\r\n  nickname <name>   Gives a name for the user.\r\n  join <room name>  Joins a room.\r\n  \\                 Leaves a room (only command\r\n                    possible inside a room).");
-		btnSend.setBounds(526, 255, 95, 115);
+		btnSend.setBounds(526, 316, 98, 54);
 		contentPane.add(btnSend);
 
 
 		textArea = new JTextArea();
+		textArea.setEnabled(false);
 		textArea.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
@@ -180,77 +192,7 @@ public class ChatClient extends JFrame {
 
 				if(!txt.isEmpty()){
 					if(e.getKeyCode() == KeyEvent.VK_ENTER){
-						
-						strState = "Chat";
-						
-						/*
-						 * TRABALHAR POSSIVELMENTE COM SALAS EM TEXTO
-						 */
-						
-						if(!inRoom) {
-							if(txt.startsWith("join <")) {
-								String usrText = txt.substring(6, txt.lastIndexOf('>'));
-									
-								textPane.setText(textPane.getText() + "Você entrou na sala: " + usrText + "\n");
-
-						        strState = "Connect";
-								
-						        Thread starter = new Thread(new ServerConnect());
-						        starter.start();
-
-						        inRoom = true;
-							} /*else if (txt.startsWith("list")) {
-								try {
-									File file = new File("M:/servers.txt");
-
-									FileWriter fw = new FileWriter(file, true);
-									BufferedWriter bw = new BufferedWriter(fw);
-									PrintWriter out = new PrintWriter(bw);
-
-									BufferedReader in = new BufferedReader(new FileReader(file));
-									String line;
-
-									textPane.setText(textPane.getText() + "\nTemos as seguintes salas disponíveis: \n");
-
-									while((line = in.readLine()) != null)
-									{
-										textPane.setText(textPane.getText() + line + "\n");
-									}
-
-									in.close();
-									out.close();
-									fw.close();
-									bw.close();
-									
-								} catch (IOException et) {
-
-								}
-							}*/ else if (txt.startsWith("nickname <") && txt.endsWith(">")){
-								String data =  txt.substring(10, txt.lastIndexOf('>'));
-								usrName = data;
-							} 
-						} else if (txt.startsWith("\\") && inRoom) {
-							// SAIR DO SERVIDOR E SALA
-							try {
-								sock.close();
-							} catch (IOException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-							
-							strState = "Disconnect";
-							inRoom = false;		
-						}
-
-						if(strState != "Connect") {
-			            try {
-			                writer.println(usrName + ":" + txt + ":" + strState);
-			                writer.flush(); // flushes the buffer
-			             } catch (Exception ex) {
-			                //addText("Entre em uma sala! \n");
-			             }
-						}
-						textArea.setText("");
+						sendText();
 					}
 				}
 			}
@@ -269,6 +211,23 @@ public class ChatClient extends JFrame {
         textPane.setEditable(false);
         textPane.setContentType("text/html");
         textPane.setEditorKit(new StyledEditorKit());
+        
+        JButton btnNewButton = new JButton("Conectar");
+        btnNewButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		if(!isConnected) {
+        	        Thread starter = new Thread(new ServerConnect());
+        	        starter.start();
+        	        addText("You entered the Server! You must enter in a room! \n");
+        	        isConnected = true;
+        	        textArea.setEnabled(true);
+        		} else {
+        	        addText("You are already connected to the server!\n");
+        		}
+        	}
+        });
+        btnNewButton.setBounds(526, 255, 98, 54);
+        contentPane.add(btnNewButton);
         textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         setResizable(false);
         /*
@@ -302,26 +261,41 @@ public class ChatClient extends JFrame {
 		}
 		*/
 		setVisible(true);
+		
+
 	}
 
+	public void sendText() {
+
+
+        try {
+            writer.println(usrName + ":" + txt + ":" + "Chat");
+            writer.flush(); // 
+         } catch (Exception ex) {
+         }
+		textArea.setText("");
+
+	}
+	
     public class ServerConnect implements Runnable 
     {
         @Override
         public void run() 
         {
+
             try 
             {
                 sock = new Socket(serverIP, port);
                 InputStreamReader streamreader = new InputStreamReader(sock.getInputStream());
                 reader = new BufferedReader(streamreader);
                 writer = new PrintWriter(sock.getOutputStream());
-                writer.println(usrName + ":" + txt + ":Connect");
+                writer.println(usrName + ":has connected.:Connect");
                 writer.flush(); 
+
             } 
             catch (Exception ex) 
             {
-                addText("Cannot Connect! Try Again. \n");
-                //tf_username.setEditable(true);
+
             }
             
             ListenThread();
@@ -332,6 +306,4 @@ public class ChatClient extends JFrame {
 		textPane.setText(textPane.getText() + str);
         textPane.select(textPane.getText().length(), textPane.getText().length());
 	}
-
-
 }
