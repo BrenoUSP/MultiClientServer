@@ -145,7 +145,7 @@ public class ChatClient extends JFrame {
 			}
 		});
 
-		JButton btnSend = new JButton("Enviar");
+		JButton btnSend = new JButton("Send");
 		btnSend.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -159,7 +159,7 @@ public class ChatClient extends JFrame {
 		});
 
 		JPanel panel_1 = new JPanel();
-		panel_1.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Comandos", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		panel_1.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Commands", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		panel_1.setBounds(4, 239, 250, 141);
 		contentPane.add(panel_1);
 		panel_1.setLayout(null);
@@ -206,7 +206,7 @@ public class ChatClient extends JFrame {
         textPane.setContentType("text/html");
         textPane.setEditorKit(new StyledEditorKit());
         
-        JButton btnNewButton = new JButton("Conectar");
+        JButton btnNewButton = new JButton("Connect");
         btnNewButton.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(!isConnected) {
@@ -252,7 +252,7 @@ public class ChatClient extends JFrame {
                 InputStreamReader streamreader = new InputStreamReader(sock.getInputStream());
                 reader = new BufferedReader(streamreader);
                 writer = new PrintWriter(sock.getOutputStream());
-                writer.println(usrName + ":has connected.:Connect");
+                writer.println(usrName + "::Connect");
                 writer.flush(); 
 
             } 

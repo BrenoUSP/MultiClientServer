@@ -182,46 +182,81 @@ public class ChatServer extends JFrame {
     						}
 
     					} else if(data[1].startsWith("join <") && data[1].endsWith(">") && data[1].length() > 7) {
-
-    						usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
-    						map.get(user)[1] = usrRoom;
-
-    						boolean roomExists = false;
-
-    						for(String room : rooms) {
-    							if (room.equals(usrRoom)) {
-    								roomExists = true;
-    								break;
+    						boolean limitRoom = false;
+    						
+    						if(rooms.size() >= 10) {
+    							boolean roomEmpty;
+    							String roomToDelete = "";
+    							
+    							for(String room : rooms) {
+    								roomEmpty = true;
+    								
+    								for(PrintWriter userInRoom : map.keySet()) {
+    									if(map.get(userInRoom)[1].equals(room)) {
+    										roomEmpty = false;
+    										break;
+    									}
+    								}
+    								
+    								if(roomEmpty) {
+    									roomToDelete = room;
+    									break;
+    								}
     							}
-    						}
 
-    						if(!roomExists) {
-    							rooms.add(usrRoom);
-    						}
+    							if(roomToDelete.equals("")) {
+    								limitRoom = true;
+    								user.println(":Server already have 10 rooms. All of them contains at least one user.:Chat");
+    								user.flush();
+    							} else {
+    								rooms.remove(roomToDelete);
 
-    						list.setModel(new AbstractListModel() {
-    							public int getSize() {
-    								return rooms.size();
-    							}
-    							public Object getElementAt(int index) {
-    								return rooms.get(index);
-    							}
-    						});
-
-    						user.println(":You entered the room - " + usrRoom + ":Chat");
-    						user.flush();
-
-    						for(PrintWriter writer : map.keySet()){
-
-    							if(map.get(writer)[1].equals(usrRoom) && !user.equals(writer)) {
-    								writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
-    								writer.flush();
     							}
 
     						} 
 
-    						send = false;
-    						break;
+    						if(!limitRoom) {
+    							usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
+    							map.get(user)[1] = usrRoom;
+
+    							boolean roomExists = false;
+
+    							for(String room : rooms) {
+    								if (room.equals(usrRoom)) {
+    									roomExists = true;
+    									break;
+    								}
+    							}
+
+    							if(!roomExists) {
+    								rooms.add(usrRoom);
+    							}
+
+    							list.setModel(new AbstractListModel() {
+    								public int getSize() {
+    									return rooms.size();
+    								}
+    								public Object getElementAt(int index) {
+    									return rooms.get(index);
+    								}
+    							});
+
+    							user.println(":You entered the room - " + usrRoom + ":Chat");
+    							user.flush();
+
+    							for(PrintWriter writer : map.keySet()){
+
+    								if(map.get(writer)[1].equals(usrRoom) && !user.equals(writer)) {
+    									writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
+    									writer.flush();
+    								}
+
+    							} 
+
+    							send = false;
+    							break;
+
+    						}
 
     					} else if(data[1].startsWith("nickname <") && data[1].endsWith(">") && data[1].length() > 11) {
     						String usrName = data[1].substring(10, data[1].indexOf(">"));
@@ -240,10 +275,6 @@ public class ChatServer extends JFrame {
     							}
 
     						} 
-    						
-    						
-							//writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
-							//writer.flush();
     						
     					} else {
     						
@@ -302,11 +333,6 @@ public class ChatServer extends JFrame {
 
 }
 
-
-
-/**
- * Create the frame.
- */
 public ChatServer() {
 	setTitle("Servidor");
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -332,7 +358,7 @@ public ChatServer() {
 
 	panel = new JPanel();
 	panel.setLayout(null);
-	panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Salas", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+	panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Rooms", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
 	panel.setBounds(0, 0, 151, 246);
 	contentPane.add(panel);
 
@@ -340,21 +366,21 @@ public ChatServer() {
 	list.setBounds(10, 21, 131, 214);
 	panel.add(list);
 
-	JButton btnIniciar = new JButton("Iniciar");
+	JButton btnIniciar = new JButton("Start");
 	btnIniciar.addMouseListener(new MouseAdapter() {
 		@Override
 		public void mouseClicked(MouseEvent e) {
 			Thread starter = new Thread(new ServerStart());
 			starter.start();
 
-			addText("Servidor iniciado!\n");
+			addText("Server started!\n");
 		}
 	});
 
 	btnIniciar.setBounds(231, 219, 89, 23);
 	contentPane.add(btnIniciar);
 
-	JButton btnNewButton_1 = new JButton("Parar");
+	JButton btnNewButton_1 = new JButton("Stop");
 	btnNewButton_1.setBounds(374, 219, 89, 23);
 	contentPane.add(btnNewButton_1);
 
