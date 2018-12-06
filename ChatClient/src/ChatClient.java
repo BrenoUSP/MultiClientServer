@@ -57,6 +57,7 @@ public class ChatClient extends JFrame {
     Thread starter;
     String strState, txt;
     boolean isConnected = false;
+    Thread IncomingReader;
     
 	/**
 	 * Launch the application.
@@ -87,8 +88,8 @@ public class ChatClient extends JFrame {
         @Override
         public void run() 
         {
+            String stream;
             String[] data;
-            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat";
 
             try 
             {
@@ -96,12 +97,16 @@ public class ChatClient extends JFrame {
                 {
                      data = stream.split(":");
 
-                     if (data[2].equals(chat)) 
+                     if (data[2].equals("Chat")) 
                      {
-                        addText(data[0] + ": " + data[1] + "\n");
-                        //ta_chat.setCaretPosition(ta_chat.getDocument().getLength());
-                     } else if (data[2].equals(connect)) {
-                    	 //addText(data[0] + " enters the room."+ "\n");
+                    	if(data[0].length() > 0) {
+                            addText(data[0] + ": " + data[1] + "\n");
+                    	} else {
+                    		addText(data[1] + "\n");
+                    	}
+
+                     } else if (data[2].equals("Nickname")) {
+                    	 usrName = data[1];
                      }
                 }
            }catch(Exception ex) { }
@@ -125,31 +130,18 @@ public class ChatClient extends JFrame {
 		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-				try {
+					writer.println(usrName + ":\\:Chat");
+					writer.flush(); 
 
-					if (inRoom) {
+					writer.println("::Disconnect");
+					writer.flush();
 
+					try {
 						sock.close();
-
-						String strState = "Disconnect";
-						inRoom = false;
-
-
-						writer.println(usrName + ":" + " :" + strState);
-						writer.flush(); // flushes the buffer
-
-						textArea.setText("");
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-					
-					File file = new File("M:/users.txt");
-
-					List<String> lines = FileUtils.readLines(file);
-					List<String> updatedLines = lines.stream().filter(s -> !s.contains(usrName)).collect(Collectors.toList());
-					FileUtils.writeLines(file, updatedLines, false);
-
-				} catch (IOException et) {
-
-				}
 			}
 		});
 
@@ -220,7 +212,7 @@ public class ChatClient extends JFrame {
         		if(!isConnected) {
         	        Thread starter = new Thread(new ServerConnect());
         	        starter.start();
-        	        addText("You entered the Server! You must enter in a room! \n");
+        	        addText("You entered the Server!\n");
         	        isConnected = true;
         	        textArea.setEnabled(true);
         		} else {
@@ -275,6 +267,6 @@ public class ChatClient extends JFrame {
 
 	public void addText(String str) {
 		textPane.setText(textPane.getText() + str);
-        textPane.select(textPane.getText().length(), textPane.getText().length());
+        textPane.select(textPane.getText().length(), textPane.getText().length()); // Desce o Scroll da área de texto
 	}
 }

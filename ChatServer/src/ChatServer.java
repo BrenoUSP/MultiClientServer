@@ -57,7 +57,7 @@ public class ChatServer extends JFrame {
              }
              catch (Exception ex) 
              {
-                 //ta_chat.append("Unexpected error... \n");
+
              }
 
         }
@@ -65,7 +65,7 @@ public class ChatServer extends JFrame {
         @Override
         public void run() 
         {
-             String message, connect = "Connect", disconnect = "Disconnect", chat = "Chat" ;
+             String message;
              String[] data;
 
              try 
@@ -74,19 +74,18 @@ public class ChatServer extends JFrame {
                  {
                      data = message.split(":");
 
-                     if (data[2].equals(connect)) 
+                     if (data[2].equals("Connect")) 
                      {
                          userAdd(data[0]);
-                         tellEveryone((data[0] + ":" + data[1] + ":" + chat));
+                         tellEveryone((data[0] + ":" + data[1] + ":Chat"));
                      } 
-                     else if (data[2].equals(disconnect)) 
+                     else if (data[2].equals("Disconnect")) 
                      {
-                         tellEveryone((data[0] + ":has disconnected." + ":" + chat));
                          userRemove(data[0]);
                      } 
-                     else if (data[2].equals(chat)) 
+                     else if (data[2].equals("Chat")) 
                      {
-                         tellEveryone(message);
+                    	 tellEveryone(message);
                      } 
                  } 
               } 
@@ -140,73 +139,6 @@ public class ChatServer extends JFrame {
         });
     }
  
-    
-/*
-    public void tellEveryone(String message) 
-    {
-    	String[] data = message.split(":");
-		
-		if(data[2].equals("Chat")) {
-        	String room = findRoom(message);
-        	roomCall(room, message);
-        	
-    	} else {
-    		systemCall(message);
-    	}
-    	  	
-    }
-
-    public void userAdd (String message) 
-    {
-    	String[] data = message.split(":");
-
-    	System.out.println(data[1]);
-    	String usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
-
-    	boolean roomExists = false;
-
-    	for(String room : rooms) {
-    		if (room.equals(usrRoom)) {
-    			roomExists = true;
-    			break;
-    		}
-    	}
-
-    	map.get(client)[1] = usrRoom;
-
-    	if(!roomExists) {
-    		rooms.add(usrRoom);
-    	}
-
-    	list.setModel(new AbstractListModel() {
-    		//String[] values = (String[]) servers.toArray();
-    		public int getSize() {
-    			return rooms.size();
-    		}
-    		public Object getElementAt(int index) {
-    			return rooms.get(index);
-    		}
-    	});
-
-    	map.get(client)[0] = data[0];
-    }
-    
-    public void userRemove (String data) 
-    {
-    	String[] userTemp;
-    	
-        for(PrintWriter client : map.keySet()) {
-        	userTemp = map.get(client);
-        	
-        	if(userTemp[0].equals(data)) {
-        		map.remove(client);
-        		break;
-        	}
-        }
-
-    }
-*/
-    
     public void userAdd (String data) 
     {
     	map.get(client)[0] = data;
@@ -229,161 +161,207 @@ public class ChatServer extends JFrame {
     	String usrRoom = "";
 
     	if(data[2].equals("Chat")) {
-    	  	if(data[1].startsWith("join <") && data[1].endsWith(">")) {
-        		for(PrintWriter user : map.keySet()) {
-        			if(map.get(user)[0].equals(data[0])){ 
-        				usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
-        				map.get(user)[1] = usrRoom;
-        				
-        				boolean roomExists = false;
+    		for(PrintWriter user : map.keySet()) {
+    			if(map.get(user)[0].equals(data[0])){ 
+    				if(map.get(user)[1].equals("")){ // USUARIO NÃO TEM SALA. COMANDOS PARA LER JOIN, NICKNAME E LIST
+    					send = false;
 
-        		    	for(String room : rooms) {
-        		    		if (room.equals(usrRoom)) {
-        		    			roomExists = true;
-        		    			break;
-        		    		}
-        		    	}
+    					if(data[1].startsWith("list")) {
 
-        		    	if(!roomExists) {
-        		    		rooms.add(usrRoom);
-        		    	}
+    						if(!rooms.isEmpty()) {
+    							user.println(":Available rooms - :Chat");
+    							user.flush();
 
-        		    	list.setModel(new AbstractListModel() {
-        		    		//String[] values = (String[]) servers.toArray();
-        		    		public int getSize() {
-        		    			return rooms.size();
-        		    		}
-        		    		public Object getElementAt(int index) {
-        		    			return rooms.get(index);
-        		    		}
-        		    	});
-        				
-        				user.println(":You entered the room - " + usrRoom + ":Chat");
-        				user.flush();
-        				send = false;
-        				break;
-        			}
-        		}
-        	} else {
-        		for(PrintWriter user : map.keySet()) {
-        			if(map.get(user)[0].equals(data[0])){ 
-            			if(map.get(user)[1].equals("")){ // USUARIO NÃO TEM SALA. COMANDOS PARA LER NICKNAME e LIST
-            				send = false;
-            				
-            				if(data[1].startsWith("list")) {
+    							for(String room: rooms) {
+    								user.println(":"+ room +":Chat");
+    								user.flush();
+    							}
+    						} else {
+    							user.println(":No rooms available:Chat");
+    							user.flush();
+    						}
 
-                				if(!rooms.isEmpty()) {
-                					user.println(data[0] + ":Available rooms - :Chat");
-                    				user.flush();
+    					} else if(data[1].startsWith("join <") && data[1].endsWith(">") && data[1].length() > 7) {
 
-                    				for(String room: rooms) {
-                    					user.println(":"+ room +":Chat");
-                    					user.flush();
-                    				}
-                				} else {
-                					user.println(data[0] + ":No rooms available:Chat");
-                    				user.flush();
-                				}
+    						usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
+    						map.get(user)[1] = usrRoom;
 
-            				} else {
-            					
-            				}
-            				
-            				break;
-            			} else {
-            				usrRoom = map.get(user)[1]; // USUARIO JA ESTA EM UMA SALA. COMANDOS PARA LER: \
-            				
-            				if(data[1].startsWith("\\")) {
-            					map.get(user)[1] = "";
-            					user.println(":You left the room:Chat");
-                				user.flush();
-            					break;
-            				}
+    						boolean roomExists = false;
 
-            			}
-        			}
-        		}
-        	}
+    						for(String room : rooms) {
+    							if (room.equals(usrRoom)) {
+    								roomExists = true;
+    								break;
+    							}
+    						}
 
-        	if (send) {
-        		for(PrintWriter writer : map.keySet()){
+    						if(!roomExists) {
+    							rooms.add(usrRoom);
+    						}
 
-        			if(map.get(writer)[1].equals(usrRoom)) {
-            			writer.println(message);
-            			writer.flush();
-        			}
+    						list.setModel(new AbstractListModel() {
+    							public int getSize() {
+    								return rooms.size();
+    							}
+    							public Object getElementAt(int index) {
+    								return rooms.get(index);
+    							}
+    						});
 
-        		} 
+    						user.println(":You entered the room - " + usrRoom + ":Chat");
+    						user.flush();
 
-        	} 
-    	} else {
-    		for(PrintWriter writer : map.keySet()){
-        			writer.println(message);
-        			writer.flush();
-    		} 
+    						for(PrintWriter writer : map.keySet()){
+
+    							if(map.get(writer)[1].equals(usrRoom) && !user.equals(writer)) {
+    								writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
+    								writer.flush();
+    							}
+
+    						} 
+
+    						send = false;
+    						break;
+
+    					} else if(data[1].startsWith("nickname <") && data[1].endsWith(">") && data[1].length() > 11) {
+    						String usrName = data[1].substring(10, data[1].indexOf(">"));
+    						
+    						for(PrintWriter writer : map.keySet()){
+
+    							if(map.get(writer)[1].equals(usrRoom)) {
+    								writer.println(":Your new name is " + usrName + ".:Chat");
+    								writer.flush();
+
+    								map.get(writer)[0] = usrName;
+    								
+    								writer.println(":" + usrName + ":Nickname");
+    								writer.flush();
+    								break;
+    							}
+
+    						} 
+    						
+    						
+							//writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
+							//writer.flush();
+    						
+    					} else {
+    						
+    						user.println(":You must enter in a room!:Chat");
+    						user.flush();
+    					}
+
+    				break;
+    			} else { // USUARIO JA ESTA EM UMA SALA. COMANDOS PARA LER: \
+    				usrRoom = map.get(user)[1]; 
+
+    				if(data[1].startsWith("\\")) {
+    					send = false;
+    					
+    					for(PrintWriter writer : map.keySet()){
+
+    						if(map.get(writer)[1].equals(usrRoom) && !user.equals(writer)) {
+    							writer.println(":" + data[0] + " leaves room " + usrRoom + ".:Chat");
+    							writer.flush();
+    						}
+
+    					} 
+    					
+    					map.get(user)[1] = "";
+    					user.println(":You left the room.:Chat");
+    					user.flush();
+
+    					break;
+    				}
+    				
+
+
+    			}
+    		}
     	}
-  
+
+
+
+    	if (send) {
+    		for(PrintWriter writer : map.keySet()){
+
+    			if(map.get(writer)[1].equals(usrRoom)) {
+    				writer.println(message);
+    				writer.flush();
+    			}
+
+    		} 
+
+    	} 
+    } else {
+    	for(PrintWriter writer : map.keySet()){
+    		writer.println(message);
+    		writer.flush();
+    	} 
     }
 
-    
-	
-	/**
-	 * Create the frame.
-	 */
-	public ChatServer() {
-		setTitle("Servidor");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 539, 300);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(contentPane);
-		contentPane.setLayout(null);
-		setResizable(false);
-        
-        scrollPane = new JScrollPane();
-        scrollPane.setBounds(161, 11, 362, 197);
-        contentPane.add(scrollPane);
-        
-        textPane = new JEditorPane();
-        scrollPane.setViewportView(textPane);
-        textPane.setEditable(false);
-        textPane.setContentType("text/html");
-        textPane.setEditorKit(new StyledEditorKit());
-        textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-        textPane.setFont(new Font("Trebuchet MS", Font.BOLD, 20));
-        
-        panel = new JPanel();
-        panel.setLayout(null);
-        panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Salas", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
-        panel.setBounds(0, 0, 151, 246);
-        contentPane.add(panel);
-        
-        list = new JList();
-        list.setBounds(10, 21, 131, 214);
-        panel.add(list);
-        
-        JButton btnIniciar = new JButton("Iniciar");
-        btnIniciar.addMouseListener(new MouseAdapter() {
-        	@Override
-        	public void mouseClicked(MouseEvent e) {
-                Thread starter = new Thread(new ServerStart());
-                starter.start();
-                
-                addText("Servidor iniciado!\n");
-        	}
-        });
+}
 
-        btnIniciar.setBounds(231, 219, 89, 23);
-        contentPane.add(btnIniciar);
-        
-        JButton btnNewButton_1 = new JButton("Parar");
-        btnNewButton_1.setBounds(374, 219, 89, 23);
-        contentPane.add(btnNewButton_1);
 
-	}
-	
-    public void addText(String str) {
-        textPane.setText(textPane.getText() + str);
-        textPane.select(textPane.getText().length(), textPane.getText().length());
-    }
+
+/**
+ * Create the frame.
+ */
+public ChatServer() {
+	setTitle("Servidor");
+	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	setBounds(100, 100, 539, 300);
+	contentPane = new JPanel();
+	contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+	setContentPane(contentPane);
+	contentPane.setLayout(null);
+	setResizable(false);
+	setLocationRelativeTo(null);
+
+	scrollPane = new JScrollPane();
+	scrollPane.setBounds(161, 11, 362, 197);
+	contentPane.add(scrollPane);
+
+	textPane = new JEditorPane();
+	scrollPane.setViewportView(textPane);
+	textPane.setEditable(false);
+	textPane.setContentType("text/html");
+	textPane.setEditorKit(new StyledEditorKit());
+	textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+	textPane.setFont(new Font("Trebuchet MS", Font.BOLD, 20));
+
+	panel = new JPanel();
+	panel.setLayout(null);
+	panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Salas", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+	panel.setBounds(0, 0, 151, 246);
+	contentPane.add(panel);
+
+	list = new JList();
+	list.setBounds(10, 21, 131, 214);
+	panel.add(list);
+
+	JButton btnIniciar = new JButton("Iniciar");
+	btnIniciar.addMouseListener(new MouseAdapter() {
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			Thread starter = new Thread(new ServerStart());
+			starter.start();
+
+			addText("Servidor iniciado!\n");
+		}
+	});
+
+	btnIniciar.setBounds(231, 219, 89, 23);
+	contentPane.add(btnIniciar);
+
+	JButton btnNewButton_1 = new JButton("Parar");
+	btnNewButton_1.setBounds(374, 219, 89, 23);
+	contentPane.add(btnNewButton_1);
+
+}
+
+public void addText(String str) {
+	textPane.setText(textPane.getText() + str);
+	textPane.select(textPane.getText().length(), textPane.getText().length()); // Desce o Scroll da área de texto
+}
 }
