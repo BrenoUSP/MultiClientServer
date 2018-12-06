@@ -29,30 +29,27 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class ChatServer extends JFrame {
-	private JPanel contentPane;
-    PrintWriter client;
-    ArrayList<String> rooms = new ArrayList<>();
-
-    HashMap<PrintWriter, String[]> map;
-    
+	private JPanel contentPane, panel;
+    private PrintWriter client;
+    private ArrayList<String> rooms = new ArrayList<>();
+    private HashMap<PrintWriter, String[]> map;
     private JEditorPane textPane;
     private JScrollPane scrollPane;
-    private JPanel panel;
     private JList list;
     private int port = 6789;
     
-    public class ClientHandler implements Runnable	
+    public class Client implements Runnable	
     {
         BufferedReader reader;
-        Socket sock;
+        Socket socket;
 
-        public ClientHandler(Socket clientSocket, PrintWriter user) 
+        public Client(Socket clientSocket, PrintWriter user) 
         {
              client = user;
              try 
              {
-                 sock = clientSocket;
-                 InputStreamReader isReader = new InputStreamReader(sock.getInputStream());
+                 socket = clientSocket;
+                 InputStreamReader isReader = new InputStreamReader(socket.getInputStream());
                  reader = new BufferedReader(isReader);
              }
              catch (Exception ex) 
@@ -77,7 +74,7 @@ public class ChatServer extends JFrame {
                      if (data[2].equals("Connect")) 
                      {
                          userAdd(data[0]);
-                         tellEveryone((data[0] + ":" + data[1] + ":Chat"));
+                         serverCall((data[0] + ":" + data[1] + ":Chat"));
                      } 
                      else if (data[2].equals("Disconnect")) 
                      {
@@ -85,7 +82,7 @@ public class ChatServer extends JFrame {
                      } 
                      else if (data[2].equals("Chat")) 
                      {
-                    	 tellEveryone(message);
+                    	 serverCall(message);
                      } 
                  } 
               } 
@@ -111,13 +108,14 @@ public class ChatServer extends JFrame {
 
                 while (true) 
                 {
-				Socket clientSock = serverSock.accept();
-				PrintWriter writer = new PrintWriter(clientSock.getOutputStream());
+				Socket clientSocket = serverSock.accept();
+				PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
 				map.put(writer, new String[] {"", ""});
 
-				Thread listener = new Thread(new ClientHandler(clientSock, writer));
+				Thread listener = new Thread(new Client(clientSocket, writer));
 				listener.start();
-				addText("Got a connection. \n");
+
+				addText("Someone with IP " + clientSocket.getInetAddress().getHostAddress() + " connected. \n");
                 }
             }
             catch (Exception ex)
@@ -154,7 +152,7 @@ public class ChatServer extends JFrame {
     	}
     }
     
-    public void tellEveryone(String message) 
+    public void serverCall(String message) 
     {
     	String [] data = message.split(":");
     	boolean send = true;
@@ -162,7 +160,7 @@ public class ChatServer extends JFrame {
 
     	if(data[2].equals("Chat")) {
     		for(PrintWriter user : map.keySet()) {
-    			if(map.get(user)[0].equals(data[0])){ 
+    			if(map.get(user)[0].equals(data[0])){
     				if(map.get(user)[1].equals("")){ // USUARIO NÃO TEM SALA. COMANDOS PARA LER JOIN, NICKNAME E LIST
     					send = false;
 
@@ -177,7 +175,7 @@ public class ChatServer extends JFrame {
     								user.flush();
     							}
     						} else {
-    							user.println(":No rooms available:Chat");
+    							user.println(":No rooms available.:Chat");
     							user.flush();
     						}
 
@@ -206,7 +204,7 @@ public class ChatServer extends JFrame {
 
     							if(roomToDelete.equals("")) {
     								limitRoom = true;
-    								user.println(":Server already have 10 rooms. All of them contains at least one user.:Chat");
+    								user.println(":Server already have 10 rooms. All of them contain at least one user.:Chat");
     								user.flush();
     							} else {
     								rooms.remove(roomToDelete);
@@ -215,7 +213,7 @@ public class ChatServer extends JFrame {
 
     						} 
 
-    						if(!limitRoom) {
+    						if(!limitRoom) { // ENTRA EM UMA SALA JÁ QUE NÃO TEM PROBLEMAS DE LIMITE DE 10 SALAS
     							usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
     							map.get(user)[1] = usrRoom;
 
@@ -252,7 +250,7 @@ public class ChatServer extends JFrame {
     								}
 
     							} 
-
+    							
     							send = false;
     							break;
 
@@ -304,9 +302,7 @@ public class ChatServer extends JFrame {
 
     					break;
     				}
-    				
-
-
+    
     			}
     		}
     	}
@@ -330,7 +326,7 @@ public class ChatServer extends JFrame {
     		writer.flush();
     	} 
     }
-
+    	
 }
 
 public ChatServer() {

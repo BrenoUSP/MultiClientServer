@@ -3,6 +3,7 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.AbstractListModel;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
@@ -28,6 +29,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.awt.event.KeyAdapter;
@@ -36,32 +38,20 @@ import javax.swing.JScrollPane;
 import javax.swing.JEditorPane;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 
 public class ChatClient extends JFrame {
-	JTextArea textArea;
-    BufferedReader reader;
-    Socket sock;
-    PrintWriter client;
-    PrintWriter writer;
+	private JTextArea textArea;
+    private BufferedReader reader;
+    private Socket socket;
+    private PrintWriter writer;
 	private JPanel contentPane;
-	String usrName;
-	String message = "";
-    ArrayList<String> users = new ArrayList();
-	private ObjectOutputStream output;
-	private ObjectInputStream input;
-	private Socket connection;
-	private String serverIP = "localhost";
-	private int port = 6789;
-	JEditorPane textPane;
-	boolean inRoom = false;
-    Thread starter;
-    String strState, txt;
-    boolean isConnected = false;
-    Thread IncomingReader;
-    
-	/**
-	 * Launch the application.
-	 */
+	private String serverIP, usrName, txt;
+	private int port;
+	private JEditorPane textPane;
+	boolean inRoom = false, isConnected = false;
+
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -73,17 +63,16 @@ public class ChatClient extends JFrame {
 			}
 		});
 	}
-    
-	  
-    public void ListenThread() 
+     
+    public void Listen() 
     {
-         Thread IncomingReader = new Thread(new IncomingReader());
+         Thread IncomingReader = new Thread(new Reader());
          IncomingReader.start();
     }
     
  
 	
-    public class IncomingReader implements Runnable
+    public class Reader implements Runnable
     {
         @Override
         public void run() 
@@ -107,7 +96,7 @@ public class ChatClient extends JFrame {
 
                      } else if (data[2].equals("Nickname")) {
                     	 usrName = data[1];
-                     }
+                     } 
                 }
            }catch(Exception ex) { }
         }
@@ -130,6 +119,7 @@ public class ChatClient extends JFrame {
 		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+				if(isConnected) {
 					writer.println(usrName + ":\\:Chat");
 					writer.flush(); 
 
@@ -137,11 +127,12 @@ public class ChatClient extends JFrame {
 					writer.flush();
 
 					try {
-						sock.close();
+						socket.close();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+				}
 			}
 		});
 
@@ -197,7 +188,7 @@ public class ChatClient extends JFrame {
 		contentPane.add(textArea);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 11, 614, 219);
+		scrollPane.setBounds(10, 11, 614, 183);
 		contentPane.add(scrollPane);
 		
 		textPane = new JEditorPane();
@@ -206,22 +197,23 @@ public class ChatClient extends JFrame {
         textPane.setContentType("text/html");
         textPane.setEditorKit(new StyledEditorKit());
         
-        JButton btnNewButton = new JButton("Connect");
-        btnNewButton.addActionListener(new ActionListener() {
+        JButton btnConnect = new JButton("Connect");
+        btnConnect.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(!isConnected) {
+        			serverIP = JOptionPane.showInputDialog(null, "Server IP", "Connect", 1);
+        			port = Integer.parseInt(JOptionPane.showInputDialog(null, "Port", "Connect", 1));
+        			
         	        Thread starter = new Thread(new ServerConnect());
         	        starter.start();
-        	        addText("You entered the Server!\n");
-        	        isConnected = true;
-        	        textArea.setEnabled(true);
+
         		} else {
         	        addText("You are already connected to the server!\n");
         		}
         	}
         });
-        btnNewButton.setBounds(526, 255, 98, 54);
-        contentPane.add(btnNewButton);
+        btnConnect.setBounds(526, 255, 98, 54);
+        contentPane.add(btnConnect);
         textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         setResizable(false);
 
@@ -248,20 +240,23 @@ public class ChatClient extends JFrame {
 
             try 
             {
-                sock = new Socket(serverIP, port);
-                InputStreamReader streamreader = new InputStreamReader(sock.getInputStream());
+                socket = new Socket(serverIP, port);
+                InputStreamReader streamreader = new InputStreamReader(socket.getInputStream());
                 reader = new BufferedReader(streamreader);
-                writer = new PrintWriter(sock.getOutputStream());
+                writer = new PrintWriter(socket.getOutputStream());
+    	        addText("You entered the Server!\n");
+    	        isConnected = true;
+    	        textArea.setEnabled(true);
                 writer.println(usrName + "::Connect");
                 writer.flush(); 
 
             } 
             catch (Exception ex) 
             {
-
+            	JOptionPane.showMessageDialog(null, "Invalid Server!", "Connect", 0);
             }
             
-            ListenThread();
+            Listen();
         }
     }
 

@@ -16,3 +16,5 @@
 /client_frame$7.class
 /client_frame$8.class
 /ChatClient$5.class
+/ChatClient$IncomingReader$1.class
+/ChatClient$Reader.class
