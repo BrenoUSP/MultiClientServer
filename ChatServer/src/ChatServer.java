@@ -45,6 +45,7 @@ public class ChatServer extends JFrame {
 	private JList list;
 	private int port;
 	private JTextField textFieldIP;
+	private boolean serverStarted = false;
 
 	public class Client implements Runnable	
 	{
@@ -62,7 +63,7 @@ public class ChatServer extends JFrame {
 			}
 			catch (Exception ex) 
 			{
-
+				ex.printStackTrace();
 			}
 
 		}
@@ -124,7 +125,7 @@ public class ChatServer extends JFrame {
 		for(PrintWriter writer : map.keySet()){
 
 			if(map.get(writer).getRoom().equals(usrRoom) && usrRoom != "" && !user.equals(writer)) {
-				writer.println("::Typing");
+				writer.println(":" + usrName + ":Typing");
 				writer.flush();
 			}
 
@@ -140,11 +141,12 @@ public class ChatServer extends JFrame {
 
 			try 
 			{
-				ServerSocket serverSock = new ServerSocket(port);
-
+				ServerSocket serverSocket = new ServerSocket(port);
+				serverStarted = true;
+				
 				while (true) 
 				{
-					Socket clientSocket = serverSock.accept();
+					Socket clientSocket = serverSocket.accept();
 					PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
 					map.put(writer, new User("",""));
 
@@ -156,7 +158,7 @@ public class ChatServer extends JFrame {
 			}
 			catch (Exception ex)
 			{
-
+				JOptionPane.showMessageDialog(null, "Server not started. Try changing the port.", "Error", 0);
 			}
 		}
 	}
@@ -394,7 +396,7 @@ public class ChatServer extends JFrame {
 	}
 
 	public ChatServer() {
-		setTitle("Servidor");
+		setTitle("Server");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 539, 315);
 		contentPane = new JPanel();
@@ -431,11 +433,16 @@ public class ChatServer extends JFrame {
 		btnIniciar.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				port = Integer.parseInt(JOptionPane.showInputDialog(null, "Input a port the server will be hosted. e.g. 6789", "Server Port", 1));
-				Thread starter = new Thread(new ServerStart());
-				starter.start();
+				if(!serverStarted) {
+					port = Integer.parseInt(JOptionPane.showInputDialog(null, "Input a port the server will be hosted. e.g. 6789", "Server Port", 1));
+					Thread starter = new Thread(new ServerStart());
+					starter.start();
 
-				addText("Server started!\n");
+					addText("Server started!\n");
+				} else {
+					addText("Server already started!\n");
+				}
+
 			}
 		});
 
@@ -450,7 +457,6 @@ public class ChatServer extends JFrame {
 		try {
 			textFieldIP.setText(Inet4Address.getLocalHost().getHostAddress());
 		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		

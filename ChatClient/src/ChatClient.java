@@ -112,23 +112,25 @@ public class ChatClient extends JFrame {
             		} else if (data[2].equals("Nickname")) {
             			usrName = data[1];
             		} else if (data[2].equals("Typing")) {
-            			typing();
+            			typing(data[1]);
             		}
             	}
-            }catch(Exception ex) { }
+            }catch(Exception ex) { 
+            	ex.printStackTrace();
+            }
         }
     }
     
-    public void typing() {
-    	jLabelType.setText("");
+    public void typing(String usrName) {
+        jLabelType.setText(usrName + " is typing...");
         new java.util.Timer().schedule(
                 new java.util.TimerTask() {
                     @Override
                     public void run() {
-                        jLabelType.setText("Someone is typing...");
+                        jLabelType.setText("");
                     }
                 },
-                (new Random()).nextInt((3800 - 3500) + 1) + 3500
+                (new Random()).nextInt((3800 - 3500) + 1) + 350
         );
     }
     
@@ -157,7 +159,6 @@ public class ChatClient extends JFrame {
 					try {
 						socket.close();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -190,33 +191,34 @@ public class ChatClient extends JFrame {
 		txtpnCommandsListList.setText("  list              List the names of all rooms.\r\n  nickname <name>   Gives a name for the user.\r\n  join <room name>  Joins a room.\r\n  \\                 Leaves a room (only command\r\n                    possible inside a room).");
 		btnSend.setBounds(526, 244, 98, 115);
 		contentPane.add(btnSend);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(266, 263, 250, 96);
+		contentPane.add(scrollPane_1);
+		
+				textArea = new JTextArea();
+				scrollPane_1.setViewportView(textArea);
+				textArea.setEditable(false);
+				textArea.addKeyListener(new KeyAdapter() {
+					@Override
+					public void keyPressed(KeyEvent e) {
+						txt = textArea.getText();
 
+						if(e.getKeyCode() != KeyEvent.VK_BACK_SPACE){
+							e.consume();
+						}
 
-		textArea = new JTextArea();
-		textArea.setEditable(false);
-		textArea.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e) {
-				txt = textArea.getText();
-
-				if(e.getKeyCode() != KeyEvent.VK_BACK_SPACE){
-					e.consume();
-				}
-
-				if(!txt.isEmpty()){
-					if(e.getKeyCode() == KeyEvent.VK_ENTER){
-						sendText();
-					} else {
-						writer.println(usrName + "::Typing");
-						writer.flush();
+						if(!txt.isEmpty()){
+							if(e.getKeyCode() == KeyEvent.VK_ENTER){
+								sendText();
+							} else {
+								writer.println(usrName + "::Typing");
+								writer.flush();
+							}
+						}
 					}
-				}
-			}
 
-		});
-
-		textArea.setBounds(266, 263, 250, 96);
-		contentPane.add(textArea);
+				});
 		
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(10, 11, 614, 166);
@@ -272,7 +274,6 @@ public class ChatClient extends JFrame {
 				}
         	}
         });
-
 
         buttonDisconnect.setBounds(526, 188, 98, 42);
         contentPane.add(buttonDisconnect);
@@ -549,6 +550,7 @@ public class ChatClient extends JFrame {
             writer.flush(); // 
     		initListener();
          } catch (Exception ex) {
+        	 ex.printStackTrace();
          }
 		textArea.setText("");
 
