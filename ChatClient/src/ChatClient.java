@@ -79,7 +79,7 @@ public class ChatClient extends JFrame {
 		});
 	}
      
-    public void Listen() 
+    public void Listen() // Comando usado para receber mensagens do servidor
     {
          Thread IncomingReader = new Thread(new Reader());
          IncomingReader.start();
@@ -99,9 +99,17 @@ public class ChatClient extends JFrame {
             {
             	while ((stream = reader.readLine()) != null) 
             	{
+            		
+            		// Fica rodando para receber mensagens do servidor
+            		
             		data[0] = stream.substring(0, stream.indexOf(":"));
             		data[1] = stream.substring(stream.indexOf(":") + 1, stream.lastIndexOf(":"));
             		data[2] = stream.substring(stream.lastIndexOf(":") + 1, stream.length());
+            		
+            		/* Da mesma forma que o servidor, será necessário tratar mensagens com marcadores.
+            		 * O servidor poderá redirecioanar aos Clients diferentes tipos de mensagens, que
+            		 * serão tratadas em seguidas.
+            		 */
             		
             		if (data[2].equals("Chat")) 
             		{
@@ -127,7 +135,7 @@ public class ChatClient extends JFrame {
         }
     }
     
-    public void listUsers(String message){
+    public void listUsers(String message){ // Lista os usuários em uma sala 
     	String users = message.substring(message.lastIndexOf("-") + 1, message.length());
     	
     	if(message.contains("left")) {
@@ -160,7 +168,7 @@ public class ChatClient extends JFrame {
 		}
     }
     
-    public void typing(String usrName) {
+    public void typing(String usrName) { // Indica no label se existe alguém digitando alguma mensagem
         jLabelType.setText(usrName + " is typing...");
         new java.util.Timer().schedule(
                 new java.util.TimerTask() {
@@ -471,7 +479,10 @@ public class ChatClient extends JFrame {
 		
 	}
 
-    private void initListener() {
+    private void initListener() { 
+    	/* Esse método é exclusivamente usado para detectar o uso de caractéres que indicam emojis,
+    	para dessa forma substituir eles por imagens.*/
+    	
         textPane.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent event) {
                 final DocumentEvent e = event;
@@ -595,11 +606,11 @@ public class ChatClient extends JFrame {
         });
     }
 	
-	public void sendText() {
+	public void sendText() { // Envia mensagem para o servidor
 
         try {
             writer.println(usrName + ":" + txt + ":" + "Chat");
-            writer.flush(); // 
+            writer.flush();
     		initListener();
          } catch (Exception ex) {
         	 ex.printStackTrace();

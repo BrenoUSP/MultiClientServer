@@ -48,13 +48,17 @@ public class ChatServer extends JFrame {
 	private JTextField textFieldIP;
 	private boolean serverStarted = false;
 
-	public class Client implements Runnable	
+	public class Client implements Runnable	// Implementa de Runnable pois iremos trabalhar com uma classe que será jogada em Thread
 	{
 		BufferedReader reader;
 		Socket socket;
 
-		public Client(Socket clientSocket, PrintWriter user) 
-		{
+		public Client(Socket clientSocket, PrintWriter user) {
+	
+		/* Vai trabalhar com os sockets individuais do Clients.
+		 * Além de ter o PrintWriter, para mandar uma mensagem específica para cada client.
+		 */
+
 			client = user;
 			try 
 			{
@@ -77,12 +81,18 @@ public class ChatServer extends JFrame {
 
 			try 
 			{
-				while ((message = reader.readLine()) != null) 
+				while ((message = reader.readLine()) != null) // Fica rodando para receber mensagens do Clients
 				{
+					// Divide nos dados que serão trabalhados da mensagem do usuário
 					data[0] = message.substring(0, message.indexOf(":"));
 					data[1] = message.substring(message.indexOf(":") + 1, message.lastIndexOf(":"));
 					data[2] = message.substring(message.lastIndexOf(":") + 1, message.length());
 
+					/* Cada mensagem tem um marcador diferente. Uma indica usuários conectando, 
+					 * disconectando, enviando mensagem para o chat, e simplesmente digitando. 
+					 * A partir disso serão tratados as mensagem dos Clients de forma diferenciada.
+					*/
+					
 					if (data[2].equals("Connect")) 
 					{
 						userAdd(data[0]);
@@ -109,7 +119,7 @@ public class ChatServer extends JFrame {
 
 	}
 	
-	public void typing(String usrName) {
+	public void typing(String usrName) { // O método é usado para mandar para os usuários de uma sala que há outra pessoa digitando uma mensagem
 		String usrRoom = "";
 		PrintWriter user = null;
 		
@@ -142,12 +152,12 @@ public class ChatServer extends JFrame {
 
 			try 
 			{
-				ServerSocket serverSocket = new ServerSocket(port);
+				ServerSocket serverSocket = new ServerSocket(port); // Inicia o server com um dado socket e uma porta específica
 				serverStarted = true;
 				
-				while (true) 
+				while (true) // Fica rodando para reconhecer clients que se conectarem ao servidor
 				{
-					Socket clientSocket = serverSocket.accept();
+					Socket clientSocket = serverSocket.accept(); 
 					PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
 					map.put(writer, new User("",""));
 
@@ -176,12 +186,12 @@ public class ChatServer extends JFrame {
 		});
 	}
 
-	public void userAdd (String usrName) 
+	public void userAdd (String usrName) // Coloca usuário no HashMap
 	{
 		map.get(client).setUsername(usrName);
 	}
 
-	public void userRemove (String usrName) 
+	public void userRemove (String usrName) // Remove usuário do HashMap
 	{
 		for (PrintWriter user : map.keySet()) {
 			if(map.get(user).getUsername().equals(usrName)) {
@@ -191,7 +201,7 @@ public class ChatServer extends JFrame {
 		}
 	}
 
-	public boolean isDuplicate(String usrName) {
+	public boolean isDuplicate(String usrName) { // Vê se tem outras pessoas com nome igual na sala
 		for (PrintWriter user : map.keySet()) {
 			if(map.get(user).getUsername().equals(usrName)) {
 				return true;
@@ -203,6 +213,12 @@ public class ChatServer extends JFrame {
 	
 	public void serverCall(String message) 
 	{
+		/* Esse é o método mais importante do programa. Ele irá trabalhar com as mensagens enviadas pelos usuários
+		 * para poder direcionar a usuários específicos. Por exemplo, usuário de uma sala X só pode ter sua
+		 * mensagem enviada para usuários de sala X. Usuário digita o comando nickname, só pode ser reconhecido
+		 * fora de uma sala, como exigido pelo trabalho.
+		 */
+		
 		String [] data = new String[3];
 		
 		data[0] = message.substring(0, message.indexOf(":"));
