@@ -50,6 +50,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 
 public class ChatClient extends JFrame {
 	private JTextArea textArea;
@@ -62,6 +63,7 @@ public class ChatClient extends JFrame {
 	private JEditorPane textPane;
 	private boolean isConnected = false;
     private ImageIcon smile, sad, surprised, sunglasses, sorry, blink, happy, tongue;
+    private JLabel jLabelType;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -109,14 +111,27 @@ public class ChatClient extends JFrame {
 
             		} else if (data[2].equals("Nickname")) {
             			usrName = data[1];
-            		} 
+            		} else if (data[2].equals("Typing")) {
+            			typing();
+            		}
             	}
             }catch(Exception ex) { }
         }
     }
-    /**
-	 * Create the frame.
-	 */
+    
+    public void typing() {
+    	jLabelType.setText("");
+        new java.util.Timer().schedule(
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        jLabelType.setText("Someone is typing...");
+                    }
+                },
+                (new Random()).nextInt((3800 - 3500) + 1) + 3500
+        );
+    }
+    
 	public ChatClient() {
 		setTitle("Chat");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -191,13 +206,16 @@ public class ChatClient extends JFrame {
 				if(!txt.isEmpty()){
 					if(e.getKeyCode() == KeyEvent.VK_ENTER){
 						sendText();
+					} else {
+						writer.println(usrName + "::Typing");
+						writer.flush();
 					}
 				}
 			}
 
 		});
 
-		textArea.setBounds(266, 244, 250, 115);
+		textArea.setBounds(266, 263, 250, 96);
 		contentPane.add(textArea);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -383,6 +401,10 @@ public class ChatClient extends JFrame {
         });
 
         jButton8.setIcon(tongue);
+        
+        jLabelType = new JLabel("");
+        jLabelType.setBounds(283, 238, 233, 14);
+        contentPane.add(jLabelType);
         jButton8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
             	if(isConnected) {

@@ -93,7 +93,9 @@ public class ChatServer extends JFrame {
 					else if (data[2].equals("Chat")) 
 					{
 						serverCall(message);
-					} 
+					} else if (data[2].equals("Typing")) {
+						typing(data[0]);
+					}
 				} 
 			} 
 			catch (Exception ex) 
@@ -104,7 +106,31 @@ public class ChatServer extends JFrame {
 		} 
 
 	}
+	
+	public void typing(String usrName) {
+		String usrRoom = "";
+		PrintWriter user = null;
+		
+		for(PrintWriter writer : map.keySet()){
 
+			if(map.get(writer).getUsername().equals(usrName)) {
+				usrRoom = map.get(writer).getRoom();
+				user = writer;
+				break;
+			}
+
+		} 
+		
+		for(PrintWriter writer : map.keySet()){
+
+			if(map.get(writer).getRoom().equals(usrRoom) && usrRoom != "" && !user.equals(writer)) {
+				writer.println("::Typing");
+				writer.flush();
+			}
+
+		} 
+	}
+	
 	public class ServerStart implements Runnable 
 	{
 		@Override
