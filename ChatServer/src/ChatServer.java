@@ -39,7 +39,7 @@ public class ChatServer extends JFrame {
 	private JPanel contentPane, panel;
 	private PrintWriter client;
 	private ArrayList<String> rooms = new ArrayList<>();
-	private HashMap<PrintWriter, String[]> map;
+	private HashMap<PrintWriter, User> map;
 	private JEditorPane textPane;
 	private JScrollPane scrollPane;
 	private JList list;
@@ -118,7 +118,7 @@ public class ChatServer extends JFrame {
 				{
 					Socket clientSocket = serverSock.accept();
 					PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-					map.put(writer, new String[] {"", ""});
+					map.put(writer, new User("",""));
 
 					Thread listener = new Thread(new Client(clientSocket, writer));
 					listener.start();
@@ -145,21 +145,31 @@ public class ChatServer extends JFrame {
 		});
 	}
 
-	public void userAdd (String data) 
+	public void userAdd (String usrName) 
 	{
-		map.get(client)[0] = data;
+		map.get(client).setUsername(usrName);
 	}
 
-	public void userRemove (String data) 
+	public void userRemove (String usrName) 
 	{
 		for (PrintWriter user : map.keySet()) {
-			if(map.get(user)[0].equals(data)) {
+			if(map.get(user).getUsername().equals(usrName)) {
 				map.remove(user);
 				break;
 			}
 		}
 	}
 
+	public boolean isDuplicate(String usrName) {
+		for (PrintWriter user : map.keySet()) {
+			if(map.get(user).getUsername().equals(usrName)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	public void serverCall(String message) 
 	{
 		String [] data = message.split(":");
@@ -168,8 +178,8 @@ public class ChatServer extends JFrame {
 
 		if(data[2].equals("Chat")) {
 			for(PrintWriter user : map.keySet()) {
-				if(map.get(user)[0].equals(data[0])){
-					if(map.get(user)[1].equals("")){ // USUARIO NÃO TEM SALA. COMANDOS PARA LER JOIN, NICKNAME E LIST
+				if(map.get(user).getUsername().equals(data[0])){
+					if(map.get(user).getRoom().equals("")){ // USUARIO NÃO TEM SALA. COMANDOS PARA LER JOIN, NICKNAME E LIST
 						send = false;
 
 						if(data[1].startsWith("list")) {
@@ -198,7 +208,7 @@ public class ChatServer extends JFrame {
 									roomEmpty = true;
 
 									for(PrintWriter userInRoom : map.keySet()) {
-										if(map.get(userInRoom)[1].equals(room)) {
+										if(map.get(userInRoom).getRoom().equals(room)) {
 											roomEmpty = false;
 											break;
 										}
@@ -223,7 +233,7 @@ public class ChatServer extends JFrame {
 
 							if(!limitRoom) { // ENTRA EM UMA SALA JÁ QUE NÃO TEM PROBLEMAS DE LIMITE DE 10 SALAS
 								usrRoom = data[1].substring(6, data[1].lastIndexOf('>'));
-								map.get(user)[1] = usrRoom;
+								map.get(user).setRoom(usrRoom);;
 
 								boolean roomExists = false;
 
@@ -252,7 +262,7 @@ public class ChatServer extends JFrame {
 
 								for(PrintWriter writer : map.keySet()){
 
-									if(map.get(writer)[1].equals(usrRoom) && !user.equals(writer)) {
+									if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
 										writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
 										writer.flush();
 									}
@@ -265,23 +275,29 @@ public class ChatServer extends JFrame {
 							}
 
 						} else if(data[1].startsWith("nickname <") && data[1].endsWith(">") && data[1].length() > 11) {
+
 							String usrName = data[1].substring(10, data[1].indexOf(">"));
 
-							for(PrintWriter writer : map.keySet()){
+							if(!isDuplicate(usrName)) {
+								for(PrintWriter writer : map.keySet()){
 
-								if(map.get(writer)[1].equals(usrRoom)) {
-									writer.println(":Your new name is " + usrName + ".:Chat");
-									writer.flush();
+									if(map.get(writer).getRoom().equals(usrRoom)) {
+										writer.println(":Your new name is " + usrName + ".:Chat");
+										writer.flush();
 
-									map.get(writer)[0] = usrName;
+										map.get(writer).setUsername(usrName);
 
-									writer.println(":" + usrName + ":Nickname");
-									writer.flush();
-									break;
-								}
+										writer.println(":" + usrName + ":Nickname");
+										writer.flush();
+										break;
+									}
 
-							} 
-
+								} 
+							} else {
+								user.println(":" + usrName + " is already used!:Chat");
+								user.flush();
+							}
+							
 						} else if (data[1].startsWith("\\")){
 							
 						} else {
@@ -292,21 +308,21 @@ public class ChatServer extends JFrame {
 
 						break;
 					} else { // USUARIO JA ESTA EM UMA SALA. COMANDOS PARA LER: \
-						usrRoom = map.get(user)[1]; 
+						usrRoom = map.get(user).getRoom();
 
 						if(data[1].startsWith("\\")) {
 							send = false;
 
 							for(PrintWriter writer : map.keySet()){
 
-								if(map.get(writer)[1].equals(usrRoom) && !user.equals(writer)) {
+								if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
 									writer.println(":" + data[0] + " leaves room " + usrRoom + ".:Chat");
 									writer.flush();
 								}
 
 							} 
 
-							map.get(user)[1] = "";
+							map.get(user).setRoom("");
 							user.println(":You left the room.:Chat");
 							user.flush();
 
@@ -327,7 +343,7 @@ public class ChatServer extends JFrame {
 			if (send) {
 				for(PrintWriter writer : map.keySet()){
 
-					if(map.get(writer)[1].equals(usrRoom)) {
+					if(map.get(writer).getRoom().equals(usrRoom)) {
 						writer.println(message);
 						writer.flush();
 					}

@@ -79,7 +79,7 @@ public class ChatClient extends JFrame {
         {
             String stream;
             String[] data;
-
+            
             try 
             {
                 while ((stream = reader.readLine()) != null) 
@@ -113,7 +113,7 @@ public class ChatClient extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-
+		
 		usrName = "username" + Math.abs(new Random().nextInt());
 		
 		addWindowListener(new java.awt.event.WindowAdapter() {
@@ -201,7 +201,7 @@ public class ChatClient extends JFrame {
         btnConnect.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(!isConnected) {
-        			serverIP = JOptionPane.showInputDialog(null, "Server IP", "Connect", 1);
+        			serverIP = JOptionPane.showInputDialog(null, "Server IP. e.g. localhost", "Connect", 1);
         			port = Integer.parseInt(JOptionPane.showInputDialog(null, "Port", "Connect", 1));
         			
         	        Thread starter = new Thread(new ServerConnect());
@@ -230,11 +230,14 @@ public class ChatClient extends JFrame {
 						socket.close();
 						isConnected = false;
 						textArea.setEditable(false);
+			    		usrName = "username" + Math.abs(new Random().nextInt());
 	        	        addText("You disconnected from the server!\n");
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
+				} else {
+        	        addText("You are already disconnected to the server!\n");
 				}
         	}
         });
