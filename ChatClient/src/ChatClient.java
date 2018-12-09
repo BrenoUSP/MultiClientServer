@@ -50,7 +50,7 @@ public class ChatClient extends JFrame {
 	private String serverIP, usrName, txt;
 	private int port;
 	private JEditorPane textPane;
-	boolean inRoom = false, isConnected = false;
+	boolean isConnected = false;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -165,7 +165,7 @@ public class ChatClient extends JFrame {
 
 
 		textArea = new JTextArea();
-		textArea.setEnabled(false);
+		textArea.setEditable(false);
 		textArea.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
@@ -188,7 +188,7 @@ public class ChatClient extends JFrame {
 		contentPane.add(textArea);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 11, 614, 183);
+		scrollPane.setBounds(10, 11, 614, 172);
 		contentPane.add(scrollPane);
 		
 		textPane = new JEditorPane();
@@ -212,8 +212,36 @@ public class ChatClient extends JFrame {
         		}
         	}
         });
-        btnConnect.setBounds(526, 255, 98, 54);
+        btnConnect.setBounds(526, 194, 98, 54);
         contentPane.add(btnConnect);
+        
+        JButton buttonDisconnect = new JButton("Disconnect");
+        buttonDisconnect.addMouseListener(new MouseAdapter() {
+        	@Override
+        	public void mouseClicked(MouseEvent e) {
+        		if(isConnected) {
+					writer.println(usrName + ":\\:Chat");
+					writer.flush(); 
+
+					writer.println(usrName + "::Disconnect");
+					writer.flush();
+					
+					try {
+						socket.close();
+						isConnected = false;
+						textArea.setEditable(false);
+	        	        addText("You disconnected from the server!\n");
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+        	}
+        });
+
+
+        buttonDisconnect.setBounds(526, 255, 98, 54);
+        contentPane.add(buttonDisconnect);
         textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         setResizable(false);
 
@@ -246,7 +274,7 @@ public class ChatClient extends JFrame {
                 writer = new PrintWriter(socket.getOutputStream());
     	        addText("You entered the Server!\n");
     	        isConnected = true;
-    	        textArea.setEnabled(true);
+    	        textArea.setEditable(true);
                 writer.println(usrName + "::Connect");
                 writer.flush(); 
 
