@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,9 +99,9 @@ public class ChatServer extends JFrame {
 						typing(data[0]);
 					}
 				} 
-			} 
-			catch (Exception ex) 
-			{
+			} catch(SocketException sx) { 
+            	sx.printStackTrace();
+            } catch (Exception ex) {
 				ex.printStackTrace();
 				map.remove(client);
 			} 
@@ -292,17 +293,32 @@ public class ChatServer extends JFrame {
 									}
 								});
 
-								user.println(":You entered the room - " + usrRoom + ":Chat");
-								user.flush();
 
+								String users = "";
+								
 								for(PrintWriter writer : map.keySet()){
 
 									if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
+										users = users.concat((map.get(writer).getUsername()) + "/");
 										writer.println(":" + data[0] + " enters room " + usrRoom + ".:Chat");
 										writer.flush();
 									}
 
 								} 
+								
+								users = users.concat(data[0]);
+								
+								for(PrintWriter writer : map.keySet()){
+
+									if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
+										writer.println(":-" + users + ":User");
+										writer.flush();
+									}
+
+								} 
+								
+								user.println(":You entered the room - " + usrRoom + " -" + users + ":User");
+								user.flush();
 
 								send = false;
 								break;
@@ -347,18 +363,29 @@ public class ChatServer extends JFrame {
 
 						if(data[1].startsWith("\\")) {
 							send = false;
-
+							String users = "";
+							
 							for(PrintWriter writer : map.keySet()){
 
 								if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
+									users = users.concat((map.get(writer).getUsername()) + "/");
 									writer.println(":" + data[0] + " leaves room " + usrRoom + ".:Chat");
+									writer.flush();
+								}
+
+							} 
+							
+							for(PrintWriter writer : map.keySet()){
+
+								if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
+									writer.println(":-" + users + ":User");
 									writer.flush();
 								}
 
 							} 
 
 							map.get(user).setRoom("");
-							user.println(":You left the room.:Chat");
+							user.println(":You left the room. -" + users + ":User");
 							user.flush();
 
 							break;

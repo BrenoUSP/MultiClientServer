@@ -34,6 +34,7 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,6 +63,7 @@ public class ChatClient extends JFrame {
 	private int port;
 	private JEditorPane textPane;
 	private boolean isConnected = false;
+	private JList list;
     private ImageIcon smile, sad, surprised, sunglasses, sorry, blink, happy, tongue;
     private JLabel jLabelType;
 
@@ -113,12 +115,49 @@ public class ChatClient extends JFrame {
             			usrName = data[1];
             		} else if (data[2].equals("Typing")) {
             			typing(data[1]);
+            		} else if (data[2].equals("User")) {
+            			listUsers(data[1]);
             		}
             	}
-            }catch(Exception ex) { 
+            } catch(SocketException sx) { 
+            	sx.printStackTrace();
+            } catch(Exception ex){
             	ex.printStackTrace();
             }
         }
+    }
+    
+    public void listUsers(String message){
+    	String users = message.substring(message.lastIndexOf("-") + 1, message.length());
+    	
+    	if(message.contains("left")) {
+        	String[] usersList = new String[0];
+
+    		list.setModel(new AbstractListModel() {
+    			public int getSize() {
+    				return usersList.length;
+    			}
+    			public Object getElementAt(int index) {
+    				return usersList[index];
+    			}
+    		});
+    	} else {
+        	String[] usersList = users.split("/");
+
+    		list.setModel(new AbstractListModel() {
+    			public int getSize() {
+    				return usersList.length;
+    			}
+    			public Object getElementAt(int index) {
+    				return usersList[index];
+    			}
+    		});
+    	}
+
+		String toSend = message.substring(0, message.lastIndexOf("-"));
+		if(!toSend.equals("")) {
+			addText(toSend + "\n");	
+		}
     }
     
     public void typing(String usrName) {
@@ -221,7 +260,7 @@ public class ChatClient extends JFrame {
 				});
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 11, 614, 166);
+		scrollPane.setBounds(10, 11, 453, 166);
 		contentPane.add(scrollPane);
 		
 		textPane = new JEditorPane();
@@ -406,6 +445,19 @@ public class ChatClient extends JFrame {
         jLabelType = new JLabel("");
         jLabelType.setBounds(283, 238, 233, 14);
         contentPane.add(jLabelType);
+        
+        JPanel panel = new JPanel();
+        panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Users in room", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+        panel.setBounds(467, 11, 157, 173);
+        contentPane.add(panel);
+        panel.setLayout(null);
+        
+        JScrollPane scrollPane_2 = new JScrollPane();
+        scrollPane_2.setBounds(6, 16, 141, 146);
+        panel.add(scrollPane_2);
+        
+        list = new JList();
+        scrollPane_2.setViewportView(list);
         jButton8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
             	if(isConnected) {
