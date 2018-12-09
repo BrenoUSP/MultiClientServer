@@ -7,8 +7,16 @@ import javax.swing.AbstractListModel;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
+import javax.swing.text.Utilities;
 import org.apache.commons.io.FileUtils;
 import javax.swing.UIManager;
 import java.awt.Color;
@@ -26,6 +34,7 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -40,6 +49,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.ImageIcon;
 
 public class ChatClient extends JFrame {
 	private JTextArea textArea;
@@ -50,7 +60,8 @@ public class ChatClient extends JFrame {
 	private String serverIP, usrName, txt;
 	private int port;
 	private JEditorPane textPane;
-	boolean isConnected = false;
+	private boolean isConnected = false;
+    private ImageIcon smile, sad, surprised, sunglasses, sorry, blink, happy, tongue;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -78,30 +89,32 @@ public class ChatClient extends JFrame {
         public void run() 
         {
             String stream;
-            String[] data;
-            
+            String[] data = new String[3];
+
             try 
             {
-                while ((stream = reader.readLine()) != null) 
-                {
-                     data = stream.split(":");
+            	while ((stream = reader.readLine()) != null) 
+            	{
+            		data[0] = stream.substring(0, stream.indexOf(":"));
+            		data[1] = stream.substring(stream.indexOf(":") + 1, stream.lastIndexOf(":"));
+            		data[2] = stream.substring(stream.lastIndexOf(":") + 1, stream.length());
+            		
+            		if (data[2].equals("Chat")) 
+            		{
+            			if(data[0].length() > 0) {
+            				addText(data[0] + ": " + data[1] + "\n");
+            			} else {
+            				addText(data[1] + "\n");
+            			}
 
-                     if (data[2].equals("Chat")) 
-                     {
-                    	if(data[0].length() > 0) {
-                            addText(data[0] + ": " + data[1] + "\n");
-                    	} else {
-                    		addText(data[1] + "\n");
-                    	}
-
-                     } else if (data[2].equals("Nickname")) {
-                    	 usrName = data[1];
-                     } 
-                }
-           }catch(Exception ex) { }
+            		} else if (data[2].equals("Nickname")) {
+            			usrName = data[1];
+            		} 
+            	}
+            }catch(Exception ex) { }
         }
     }
-	/**
+    /**
 	 * Create the frame.
 	 */
 	public ChatClient() {
@@ -151,7 +164,7 @@ public class ChatClient extends JFrame {
 
 		JPanel panel_1 = new JPanel();
 		panel_1.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Commands", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		panel_1.setBounds(4, 239, 250, 141);
+		panel_1.setBounds(10, 229, 250, 141);
 		contentPane.add(panel_1);
 		panel_1.setLayout(null);
 
@@ -160,7 +173,7 @@ public class ChatClient extends JFrame {
 		panel_1.add(txtpnCommandsListList);
 		txtpnCommandsListList.setEditable(false);
 		txtpnCommandsListList.setText("  list              List the names of all rooms.\r\n  nickname <name>   Gives a name for the user.\r\n  join <room name>  Joins a room.\r\n  \\                 Leaves a room (only command\r\n                    possible inside a room).");
-		btnSend.setBounds(526, 316, 98, 54);
+		btnSend.setBounds(526, 244, 98, 115);
 		contentPane.add(btnSend);
 
 
@@ -184,11 +197,11 @@ public class ChatClient extends JFrame {
 
 		});
 
-		textArea.setBounds(258, 255, 258, 115);
+		textArea.setBounds(266, 244, 250, 115);
 		contentPane.add(textArea);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 11, 614, 172);
+		scrollPane.setBounds(10, 11, 614, 166);
 		contentPane.add(scrollPane);
 		
 		textPane = new JEditorPane();
@@ -212,7 +225,7 @@ public class ChatClient extends JFrame {
         		}
         	}
         });
-        btnConnect.setBounds(526, 194, 98, 54);
+        btnConnect.setBounds(418, 188, 98, 42);
         contentPane.add(btnConnect);
         
         JButton buttonDisconnect = new JButton("Disconnect");
@@ -243,20 +256,276 @@ public class ChatClient extends JFrame {
         });
 
 
-        buttonDisconnect.setBounds(526, 255, 98, 54);
+        buttonDisconnect.setBounds(526, 188, 98, 42);
         contentPane.add(buttonDisconnect);
+        
+        JButton jButton1 = new JButton("");
+        jButton1.setBounds(10, 188, 34, 33);
+        contentPane.add(jButton1);
+        
+        JButton jButton2 = new JButton("");
+        jButton2.setBounds(54, 188, 34, 33);
+        contentPane.add(jButton2);
+        
+        JButton jButton3 = new JButton("");
+        jButton3.setBounds(98, 188, 34, 33);
+        contentPane.add(jButton3);
+        
+        JButton jButton4 = new JButton("");
+        jButton4.setBounds(142, 188, 34, 33);
+        contentPane.add(jButton4);
+        
+        JButton jButton5 = new JButton("");
+        jButton5.setBounds(185, 188, 34, 33);
+        contentPane.add(jButton5);
+        
+        JButton jButton6 = new JButton("");
+        jButton6.setBounds(229, 188, 34, 33);
+        contentPane.add(jButton6);
+        
+        JButton jButton7 = new JButton("");
+        jButton7.setBounds(273, 188, 34, 33);
+        contentPane.add(jButton7);
+        
+        JButton jButton8 = new JButton("");
+        jButton8.setBounds(317, 188, 34, 33);
+        contentPane.add(jButton8);
         textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         setResizable(false);
+        
+        try {
+            URL imageUrlF = this.getClass().getResource("/Emojis/smile.png");
+            smile = new ImageIcon(imageUrlF);
+            URL imageUrlSur = this.getClass().getResource("/Emojis/surprised.png");
+            surprised = new ImageIcon(imageUrlSur);
+            URL imageUrlSad = this.getClass().getResource("/Emojis/sad.png");
+            sad = new ImageIcon(imageUrlSad);
+            URL imageUrlSun = this.getClass().getResource("/Emojis/sunglasses.png");
+            sunglasses = new ImageIcon(imageUrlSun);
+            URL imageUrlSor = this.getClass().getResource("/Emojis/sorry.png");
+            sorry = new ImageIcon(imageUrlSor);
+            URL imageUrlBli = this.getClass().getResource("/Emojis/blink.png");
+            blink = new ImageIcon(imageUrlBli);
+            URL imageUrlHap = this.getClass().getResource("/Emojis/grin.png");
+            happy = new ImageIcon(imageUrlHap);
+            URL imageUrlTon = this.getClass().getResource("/Emojis/tongue.png");
+            tongue = new ImageIcon(imageUrlTon);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+        jButton1.setIcon(smile);
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+                    textArea.setText(textArea.getText() + ":)");
+            	}
+            }
+        });
+
+        jButton2.setIcon(sad);
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+                	textArea.setText(textArea.getText() + ":(");
+            	}
+            }
+        });
+
+        jButton3.setIcon(blink);
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+            		textArea.setText(textArea.getText() + ";)");
+            	}
+            	
+            }
+        });
+
+        jButton4.setIcon(sorry);
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+            		textArea.setText(textArea.getText() + ":/");
+            	}
+            	
+            }
+        });
+
+        jButton5.setIcon(happy);
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+            		textArea.setText(textArea.getText() + "=D");
+            	}
+            	
+            }
+        });
+
+        jButton6.setIcon(sunglasses);
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+            		textArea.setText(textArea.getText() + "8)");
+            	}
+            	
+            }
+        });
+
+        jButton7.setIcon(surprised);
+        jButton7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+            		textArea.setText(textArea.getText() + ":o");
+            	}
+            	
+            }
+        });
+
+        jButton8.setIcon(tongue);
+        jButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+            	if(isConnected) {
+            		textArea.setText(textArea.getText() + ":p");
+            	}
+            	
+            }
+        });
+        
 		setVisible(true);
 		
 	}
 
+    private void initListener() {
+        textPane.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent event) {
+                final DocumentEvent e = event;
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if (e.getDocument() instanceof StyledDocument) {
+                            try {
+                                StyledDocument doc = (StyledDocument) e.getDocument();
+                                int start = Utilities.getRowStart(textPane, Math.max(0, e.getOffset() - 1));
+                                int end = Utilities.getWordStart(textPane, e.getOffset() + e.getLength());
+                                String text = doc.getText(start, end - start);
+
+                                int i = text.indexOf(":)");
+                                while (i >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + i).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, smile);
+                                        doc.remove(start + i, 2);
+                                        doc.insertString(start + i, ":)", attrs);
+                                    }
+                                    i = text.indexOf(":)", i + 2);
+                                }
+
+                                int o = text.indexOf(":o");
+                                while (o >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + o).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, surprised);
+                                        doc.remove(start + o, 2);
+                                        doc.insertString(start + o, ":o", attrs);
+                                    }
+                                    o = text.indexOf(":o", o + 2);
+                                }
+
+                                int t = text.indexOf(":(");
+                                while (t >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + t).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, sad);
+                                        doc.remove(start + t, 2);
+                                        doc.insertString(start + t, ":(", attrs);
+                                    }
+                                    t = text.indexOf(":(", t + 2);
+                                }
+
+                                int c = text.indexOf("8)");
+                                while (c >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + c).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, sunglasses);
+                                        doc.remove(start + c, 2);
+                                        doc.insertString(start + c, "8)", attrs);
+                                    }
+                                    c = text.indexOf("8)", c + 2);
+                                }
+
+                                int y = text.indexOf(":/");
+                                while (y >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + y).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, sorry);
+                                        doc.remove(start + y, 2);
+                                        doc.insertString(start + y, ":/", attrs);
+                                    }
+                                    y = text.indexOf(":/", y + 2);
+                                }
+
+                                int p = text.indexOf(";)");
+                                while (p >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + p).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, blink);
+                                        doc.remove(start + p, 2);
+                                        doc.insertString(start + p, ";)", attrs);
+                                    }
+                                    p = text.indexOf(";)", p + 2);
+                                }
+
+                                int g = text.indexOf("=D");
+                                while (g >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + g).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, happy);
+                                        doc.remove(start + g, 2);
+                                        doc.insertString(start + g, "=D", attrs);
+                                    }
+                                    g = text.indexOf("=D", g + 2);
+                                }
+
+                                int v = text.indexOf(":p");
+                                while (v >= 0) {
+                                    final SimpleAttributeSet attrs = new SimpleAttributeSet(
+                                            doc.getCharacterElement(start + v).getAttributes());
+                                    if (StyleConstants.getIcon(attrs) == null) {
+                                        StyleConstants.setIcon(attrs, tongue);
+                                        doc.remove(start + v, 2);
+                                        doc.insertString(start + v, ":p", attrs);
+                                    }
+                                    v = text.indexOf(":p", v + 2);
+                                }
+                            } catch (BadLocationException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                });
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+            }
+        });
+    }
+	
 	public void sendText() {
 
         try {
             writer.println(usrName + ":" + txt + ":" + "Chat");
             writer.flush(); // 
+    		initListener();
          } catch (Exception ex) {
          }
 		textArea.setText("");

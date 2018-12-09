@@ -71,13 +71,15 @@ public class ChatServer extends JFrame {
 		public void run() 
 		{
 			String message;
-			String[] data;
+			String[] data = new String[3];
 
 			try 
 			{
 				while ((message = reader.readLine()) != null) 
 				{
-					data = message.split(":");
+					data[0] = message.substring(0, message.indexOf(":"));
+					data[1] = message.substring(message.indexOf(":") + 1, message.lastIndexOf(":"));
+					data[2] = message.substring(message.lastIndexOf(":") + 1, message.length());
 
 					if (data[2].equals("Connect")) 
 					{
@@ -172,7 +174,12 @@ public class ChatServer extends JFrame {
 	
 	public void serverCall(String message) 
 	{
-		String [] data = message.split(":");
+		String [] data = new String[3];
+		
+		data[0] = message.substring(0, message.indexOf(":"));
+		data[1] = message.substring(message.indexOf(":") + 1, message.lastIndexOf(":"));
+		data[2] = message.substring(message.lastIndexOf(":") + 1, message.length());
+		
 		boolean send = true;
 		String usrRoom = "";
 
@@ -406,26 +413,8 @@ public class ChatServer extends JFrame {
 			}
 		});
 
-		btnIniciar.setBounds(234, 249, 89, 23);
+		btnIniciar.setBounds(294, 252, 89, 23);
 		contentPane.add(btnIniciar);
-
-		JButton btnStop = new JButton("Stop");
-		btnStop.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				try 
-				{
-					Thread.sleep(1000);  
-				} 
-				catch(InterruptedException ex) {Thread.currentThread().interrupt();}
-
-				serverCall(":Server will now be closed.:Chat");
-				addText("Server stopped.\n");
-
-			}
-		});
-		btnStop.setBounds(364, 249, 89, 23);
-		contentPane.add(btnStop);
 		
 		textFieldIP = new JTextField();
 		textFieldIP.setEditable(false);
