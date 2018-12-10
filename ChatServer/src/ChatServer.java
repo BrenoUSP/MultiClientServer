@@ -36,6 +36,16 @@ import java.awt.Label;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+/**
+ * Essa classe consiste na construção de um servidor que receba conexão de um ou mais Clients.
+ * A conexão se dá usando de Sockets. O Server seu próprio Socket, que aceita a conexão do Socket
+ * dos Clients.
+ * 
+ * @author  Breno Lívio Silva de Almeida, Daniel Eiji Martins Chiyo, Gabriel Couto Tabak e Lucas Albano de Oliveira
+ * @version 1.0
+ * @since   09-12-2018
+ */
+
 public class ChatServer extends JFrame {
 	private JPanel contentPane, panel;
 	private PrintWriter client;
@@ -48,16 +58,16 @@ public class ChatServer extends JFrame {
 	private JTextField textFieldIP;
 	private boolean serverStarted = false;
 
-	public class Client implements Runnable	// Implementa de Runnable pois iremos trabalhar com uma classe que será jogada em Thread
+	public class Client implements Runnable	// Implementa Runnable pois iremos trabalhar com uma classe que será jogada em Thread
 	{
 		BufferedReader reader;
 		Socket socket;
 
 		public Client(Socket clientSocket, PrintWriter user) {
-	
-		/* Vai trabalhar com os sockets individuais do Clients.
-		 * Além de ter o PrintWriter, para mandar uma mensagem específica para cada client.
-		 */
+
+			/* Vai trabalhar com os sockets individuais do Clients.
+			 * Além de ter o PrintWriter, para mandar uma mensagem específica para cada client.
+			 */
 
 			client = user;
 			try 
@@ -91,8 +101,8 @@ public class ChatServer extends JFrame {
 					/* Cada mensagem tem um marcador diferente. Uma indica usuários conectando, 
 					 * disconectando, enviando mensagem para o chat, e simplesmente digitando. 
 					 * A partir disso serão tratados as mensagem dos Clients de forma diferenciada.
-					*/
-					
+					 */
+
 					if (data[2].equals("Connect")) 
 					{
 						userAdd(data[0]);
@@ -110,19 +120,19 @@ public class ChatServer extends JFrame {
 					}
 				} 
 			} catch(SocketException sx) { 
-            	sx.printStackTrace();
-            } catch (Exception ex) {
+				sx.printStackTrace();
+			} catch (Exception ex) {
 				ex.printStackTrace();
 				map.remove(client);
 			} 
 		} 
 
 	}
-	
+
 	public void typing(String usrName) { // O método é usado para mandar para os usuários de uma sala que há outra pessoa digitando uma mensagem
 		String usrRoom = "";
 		PrintWriter user = null;
-		
+
 		for(PrintWriter writer : map.keySet()){
 
 			if(map.get(writer).getUsername().equals(usrName)) {
@@ -132,7 +142,7 @@ public class ChatServer extends JFrame {
 			}
 
 		} 
-		
+
 		for(PrintWriter writer : map.keySet()){
 
 			if(map.get(writer).getRoom().equals(usrRoom) && usrRoom != "" && !user.equals(writer)) {
@@ -142,7 +152,7 @@ public class ChatServer extends JFrame {
 
 		} 
 	}
-	
+
 	public class ServerStart implements Runnable 
 	{
 		@Override
@@ -154,7 +164,7 @@ public class ChatServer extends JFrame {
 			{
 				ServerSocket serverSocket = new ServerSocket(port); // Inicia o server com um dado socket e uma porta específica
 				serverStarted = true;
-				
+
 				while (true) // Fica rodando para reconhecer clients que se conectarem ao servidor
 				{
 					Socket clientSocket = serverSocket.accept(); 
@@ -207,10 +217,10 @@ public class ChatServer extends JFrame {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	public void serverCall(String message) 
 	{
 		/* Esse é o método mais importante do programa. Ele irá trabalhar com as mensagens enviadas pelos usuários
@@ -218,13 +228,13 @@ public class ChatServer extends JFrame {
 		 * mensagem enviada para usuários de sala X. Usuário digita o comando nickname, só pode ser reconhecido
 		 * fora de uma sala, como exigido pelo trabalho.
 		 */
-		
+
 		String [] data = new String[3];
-		
+
 		data[0] = message.substring(0, message.indexOf(":"));
 		data[1] = message.substring(message.indexOf(":") + 1, message.lastIndexOf(":"));
 		data[2] = message.substring(message.lastIndexOf(":") + 1, message.length());
-		
+
 		boolean send = true;
 		String usrRoom = "";
 
@@ -311,7 +321,7 @@ public class ChatServer extends JFrame {
 
 
 								String users = "";
-								
+
 								for(PrintWriter writer : map.keySet()){
 
 									if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
@@ -321,9 +331,9 @@ public class ChatServer extends JFrame {
 									}
 
 								} 
-								
+
 								users = users.concat(data[0]);
-								
+
 								for(PrintWriter writer : map.keySet()){
 
 									if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
@@ -332,7 +342,7 @@ public class ChatServer extends JFrame {
 									}
 
 								} 
-								
+
 								user.println(":You entered the room - " + usrRoom + " -" + users + ":User");
 								user.flush();
 
@@ -364,9 +374,9 @@ public class ChatServer extends JFrame {
 								user.println(":" + usrName + " is already used!:Chat");
 								user.flush();
 							}
-							
+
 						} else if (data[1].startsWith("\\")){
-							
+
 						} else {
 
 							user.println(":You must enter in a room!:Chat");
@@ -380,7 +390,7 @@ public class ChatServer extends JFrame {
 						if(data[1].startsWith("\\")) {
 							send = false;
 							String users = "";
-							
+
 							for(PrintWriter writer : map.keySet()){
 
 								if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
@@ -390,7 +400,7 @@ public class ChatServer extends JFrame {
 								}
 
 							} 
-							
+
 							for(PrintWriter writer : map.keySet()){
 
 								if(map.get(writer).getRoom().equals(usrRoom) && !user.equals(writer)) {
@@ -491,7 +501,7 @@ public class ChatServer extends JFrame {
 
 		btnIniciar.setBounds(294, 252, 89, 23);
 		contentPane.add(btnIniciar);
-		
+
 		textFieldIP = new JTextField();
 		textFieldIP.setEditable(false);
 		textFieldIP.setBounds(314, 11, 124, 20);
@@ -502,7 +512,7 @@ public class ChatServer extends JFrame {
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		Label label = new Label("Server IP");
 		label.setBounds(248, 11, 62, 22);
 		contentPane.add(label);
